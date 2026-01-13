@@ -194,6 +194,139 @@
     }
     #rankList li{ margin: 1px 0; opacity: 0.95; }
     .rankMe{ color:#ffc107; font-weight:800; text-shadow:0 0 6px rgba(0,0,0,0.6); }
+
+    /* チュートリアルパネル */
+    #tutorialOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 50;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      pointer-events: auto;
+    }
+    #tutorialOverlay.active {
+      display: flex;
+    }
+    #tutorialPanel {
+      background: linear-gradient(135deg, rgba(30, 30, 50, 0.95), rgba(50, 40, 80, 0.95));
+      border: 2px solid rgba(255, 193, 7, 0.5);
+      border-radius: 16px;
+      padding: 30px 40px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      color: #fff;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 193, 7, 0.2);
+      animation: slideUp 0.4s ease-out;
+    }
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    #tutorialPanel .title {
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 20px;
+      color: #ffc107;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+      letter-spacing: 0.05em;
+    }
+    #tutorialPanel .step {
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    #tutorialPanel .step:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    #tutorialPanel .step-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffc107;
+      margin-bottom: 8px;
+    }
+    #tutorialPanel .step-content {
+      font-size: 14px;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.95);
+      margin-bottom: 8px;
+    }
+    #tutorialPanel .key-info {
+      background: rgba(255, 193, 7, 0.08);
+      border-left: 3px solid #ffc107;
+      padding: 10px 12px;
+      border-radius: 4px;
+      margin-top: 8px;
+      font-size: 13px;
+      font-family: monospace;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    #tutorialPanel .button-group {
+      margin-top: 28px;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    #tutorialPanel .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+    #skipTutorialBtn {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    #skipTutorialBtn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+    #startGameBtn {
+      background: linear-gradient(135deg, #ffc107, #ffb300);
+      color: #000;
+      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+    }
+    #startGameBtn:hover {
+      background: linear-gradient(135deg, #ffb300, #ff9800);
+      box-shadow: 0 6px 16px rgba(255, 193, 7, 0.5);
+      transform: translateY(-2px);
+    }
+    #tutorialBtn {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      padding: 8px 12px;
+      background: rgba(255, 193, 7, 0.15);
+      border: 1px solid rgba(255, 193, 7, 0.5);
+      color: #ffc107;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 20;
+      transition: all 0.2s ease;
+    }
+    #tutorialBtn:hover {
+      background: rgba(255, 193, 7, 0.25);
+      box-shadow: 0 0 12px rgba(255, 193, 7, 0.3);
+    }
   </style>
 </head>
 <body>
@@ -268,6 +401,88 @@ P : 一時停止 / 再開
     <ol id="rankList"></ol>
   </div>
 
+  <!-- チュートリアルパネル -->
+  <div id="tutorialOverlay">
+    <div id="tutorialPanel">
+      <div class="title">🏎️ ゲームチュートリアル</div>
+      
+      <div class="step">
+        <div class="step-title">1️⃣ 基本操作 - 移動</div>
+        <div class="step-content">
+          車両を操作してコースを走ります。以下のキーで操作してください：
+        </div>
+        <div class="key-info">
+W / ↑ : 前進<br>
+S / ↓ : 後退<br>
+A / ← : 左旋回<br>
+D / → : 右旋回<br>
+Space : ブレーキ
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">2️⃣ コース選択</div>
+        <div class="step-content">
+          画面上部のボタンからコースを選択できます。複数のコースから好きなコースを選んでチャレンジできます。
+        </div>
+        <div class="key-info">
+• コース1 : ジャンプ台と段差が特徴<br>
+• コース2 : 長くジグザグなコース<br>
+• ビットマップ : PNG/BMP画像をアップロード
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">3️⃣ ゲームモード</div>
+        <div class="step-content">
+          各コースで最速タイムを目指してプレイします。スタート地点から出発し、ゴール地点を目指しましょう。ゴールするとタイムが記録されます。
+        </div>
+        <div class="key-info">
+• 最速タイムは「Best」に保存<br>
+• Top5ランキングに入ると「Top 5」に記録<br>
+• ゴールシーンは自動保存（ゴースト機能）
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">4️⃣ ゴースト機能</div>
+        <div class="step-content">
+          新しいベストタイムを出すと、そのプレイが「ゴースト」として記録されます。次のプレイでゴースト走行が表示され、自分との対比ができます。
+        </div>
+        <div class="key-info">
+G : ゴースト表示 ON/OFF<br>
+Δ (デルタ) : ゴーストとのタイム差
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">5️⃣ その他の操作</div>
+        <div class="step-content">
+          ゲーム中は以下の操作が使えます：
+        </div>
+        <div class="key-info">
+P : ポーズ / 再開<br>
+左下「リセット」: ゲーム再開（タイマーをリセット）<br>
+? : このチュートリアルを再表示
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">6️⃣ 目標に向けて</div>
+        <div class="step-content">
+          各コースで最速タイムを目指してプレイ！ランキング上位を狙い、自分のベストを更新し続けましょう。友人と競い合うのも楽しいですよ！
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button id="skipTutorialBtn" class="btn">次回から表示しない</button>
+        <button id="startGameBtn" class="btn">ゲームをはじめる</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="tutorialBtn" title="チュートリアルを表示（T キー）">？ チュートリアル</button>
+
   <script>
     const canvas = document.getElementById("renderCanvas");
     const engine = new BABYLON.Engine(canvas, true, { stencil: false });
@@ -290,6 +505,55 @@ P : 一時停止 / 再開
 
     const holdTextEl = document.getElementById("holdText");
     const holdFillEl = document.querySelector("#holdBar > div");
+
+    // ===== チュートリアルシステム =====
+    const tutorialOverlay = document.getElementById("tutorialOverlay");
+    const tutorialBtn = document.getElementById("tutorialBtn");
+    const skipTutorialBtn = document.getElementById("skipTutorialBtn");
+    const startGameBtn = document.getElementById("startGameBtn");
+
+    const TUTORIAL_SEEN_KEY = "tutorialSeen";
+
+    function showTutorial() {
+      tutorialOverlay.classList.add("active");
+      SFX.beep(440, 60, "sine", 0.02);
+    }
+
+    function hideTutorial() {
+      tutorialOverlay.classList.remove("active");
+    }
+
+    function setTutorialSeen() {
+      localStorage.setItem(TUTORIAL_SEEN_KEY, "true");
+    }
+
+    function isTutorialSeen() {
+      return localStorage.getItem(TUTORIAL_SEEN_KEY) === "true";
+    }
+
+    // チュートリアル「スキップ」ボタン
+    skipTutorialBtn.addEventListener("click", () => {
+      setTutorialSeen();
+      hideTutorial();
+      SFX.beep(520, 80, "sine", 0.02);
+    });
+
+    // チュートリアル「ゲーム開始」ボタン
+    startGameBtn.addEventListener("click", () => {
+      setTutorialSeen();
+      hideTutorial();
+      SFX.beep(620, 80, "sine", 0.02);
+    });
+
+    // チュートリアルボタン（下部右：いつでもチュートリアル表示）
+    tutorialBtn.addEventListener("click", showTutorial);
+
+    // T キーでもチュートリアル表示
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "t" || e.key === "T" || e.key === "？") {
+        showTutorial();
+      }
+    });
 
     // ===== 効果音（WebAudio） =====
     const SFX = (() => {
@@ -2179,6 +2443,12 @@ return h;
     const scene = createScene();
     engine.runRenderLoop(() => scene.render());
     window.addEventListener("resize", () => engine.resize());
-  </script>
-</body>
-</html>
+
+    // ===== 初回プレイ時のチュートリアル表示 =====
+    window.addEventListener("load", () => {
+      if (!isTutorialSeen()) {
+        setTimeout(() => {
+          showTutorial();
+        }, 800); // ページロード後に表示
+      }
+    });
