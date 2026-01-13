@@ -195,159 +195,108 @@
     #rankList li{ margin: 1px 0; opacity: 0.95; }
     .rankMe{ color:#ffc107; font-weight:800; text-shadow:0 0 6px rgba(0,0,0,0.6); }
 
-    /* チュートリアル用スタイル */
+    /* チュートリアルパネル */
     #tutorialOverlay {
       position: fixed;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
+      width: 100%;
+      height: 100%;
       background: rgba(0, 0, 0, 0.85);
       z-index: 50;
       display: none;
-      align-items: center;
       justify-content: center;
-      backdrop-filter: blur(2px);
+      align-items: center;
+      pointer-events: auto;
     }
-    #tutorialOverlay.show {
+    #tutorialOverlay.active {
       display: flex;
     }
-
-    #tutorialModal {
-      background: linear-gradient(135deg, rgba(20, 20, 40, 0.95) 0%, rgba(30, 30, 50, 0.95) 100%);
-      border: 2px solid rgba(255, 193, 7, 0.4);
+    #tutorialPanel {
+      background: linear-gradient(135deg, rgba(30, 30, 50, 0.95), rgba(50, 40, 80, 0.95));
+      border: 2px solid rgba(255, 193, 7, 0.5);
       border-radius: 16px;
-      padding: 28px 32px;
-      max-width: 500px;
+      padding: 30px 40px;
+      max-width: 600px;
       width: 90%;
       max-height: 80vh;
       overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
       color: #fff;
-      pointer-events: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 193, 7, 0.2);
+      animation: slideUp 0.4s ease-out;
     }
-
-    #tutorialModal .title {
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    #tutorialPanel .title {
       font-size: 28px;
       font-weight: 900;
-      margin-bottom: 8px;
-      color: #ffeb3b;
-      letter-spacing: 0.05em;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    }
-
-    #tutorialModal .step-indicator {
-      font-size: 13px;
-      opacity: 0.7;
-      margin-bottom: 16px;
-      color: #ffb74d;
-    }
-
-    #tutorialModal .content {
-      font-size: 15px;
-      line-height: 1.7;
       margin-bottom: 20px;
-      opacity: 0.95;
+      color: #ffc107;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+      letter-spacing: 0.05em;
     }
-
-    #tutorialModal .content p {
-      margin: 8px 0;
+    #tutorialPanel .step {
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
-
-    #tutorialModal .key-binding {
-      background: rgba(255, 193, 7, 0.08);
-      border-left: 3px solid #ffb74d;
-      padding: 10px 12px;
-      margin: 12px 0;
-      border-radius: 6px;
-      font-family: "Monaco", "Courier New", monospace;
-      font-size: 13px;
+    #tutorialPanel .step:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
     }
-
-    #tutorialModal .key-binding strong {
-      color: #ffeb3b;
-      font-weight: 800;
-    }
-
-    #tutorialModal .controls {
-      display: flex;
-      gap: 10px;
-      justify-content: space-between;
-      margin-top: 24px;
-    }
-
-    #tutorialModal .btn {
-      border: 1px solid rgba(255, 193, 7, 0.3);
-      background: rgba(255, 193, 7, 0.1);
-      color: #fff;
-      padding: 10px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 13px;
+    #tutorialPanel .step-title {
+      font-size: 16px;
       font-weight: 700;
-      transition: all 0.2s;
+      color: #ffc107;
+      margin-bottom: 8px;
     }
-
-    #tutorialModal .btn:hover {
-      background: rgba(255, 193, 7, 0.2);
-      border-color: rgba(255, 193, 7, 0.6);
-      transform: translateY(-1px);
+    #tutorialPanel .step-content {
+      font-size: 14px;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.95);
+      margin-bottom: 8px;
     }
-
-    #tutorialModal .btn.primary {
-      background: rgba(255, 193, 7, 0.25);
-      border-color: #ffb74d;
-      color: #ffeb3b;
-    }
-
-    #tutorialModal .btn.primary:hover {
-      background: rgba(255, 193, 7, 0.35);
-      box-shadow: 0 0 12px rgba(255, 193, 7, 0.2);
-    }
-
-    #tutorialModal .progress-dots {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin-top: 20px;
-    }
-
-    #tutorialModal .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.2);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    #tutorialModal .dot.active {
-      background: #ffeb3b;
-      width: 20px;
-      border-radius: 999px;
-    }
-
-    #tutorialButton {
-      position: fixed;
-      bottom: 60px;
-      left: 10px;
-      padding: 9px 14px;
+    #tutorialPanel .key-info {
+      background: rgba(255, 193, 7, 0.08);
+      border-left: 3px solid #ffc107;
+      padding: 10px 12px;
+      border-radius: 4px;
+      margin-top: 8px;
       font-size: 13px;
+      font-family: monospace;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    #tutorialPanel .button-group {
+      margin-top: 28px;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    #tutorialPanel .btn {
+      padding: 10px 20px;
       border-radius: 8px;
       border: none;
-      background: rgba(255, 193, 7, 0.15);
-      color: #ffeb3b;
       cursor: pointer;
-      z-index: 20;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      font-size: 14px;
       font-weight: 700;
-      border: 1px solid rgba(255, 193, 7, 0.3);
-      transition: all 0.2s;
+      transition: all 0.2s ease;
     }
-
-    #tutorialButton:hover {
-      background: rgba(255, 193, 7, 0.25);
-      border-color: #ffb74d;
+    #skipTutorialBtn {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    #skipTutorialBtn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
     }
   </style>
 </head>
@@ -371,6 +320,7 @@ D / → : 右旋回
 Space : ブレーキ
 G : ゴースト ON/OFF
 P : 一時停止 / 再開
+T : チュートリアル表示
 
 ※ リセット/コース切替でカウントダウン開始
   </div>
@@ -400,7 +350,66 @@ P : 一時停止 / 再開
 <span class="key">D / →</span> 右旋回
 <span class="key">Space</span> ブレーキ
 <span class="key">G</span> ゴースト ON/OFF
+<span class="key">T</span> チュートリアル
 <span class="key">リセット</span> 左下ボタン
+    </div>
+  </div>
+
+  <!-- チュートリアルパネル -->
+  <div id="tutorialOverlay">
+    <div id="tutorialPanel">
+      <div class="title">🏎️ ゲームチュートリアル</div>
+      
+      <div class="step">
+        <div class="step-title">1️⃣ 基本操作 - 移動</div>
+        <div class="step-content">
+          車両を操作してコースを走ります。以下のキーで操作してください：
+        </div>
+        <div class="key-info">
+W / ↑ : 前進<br>
+S / ↓ : 後退<br>
+A / ← : 左旋回<br>
+D / → : 右旋回<br>
+Space : ブレーキ
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">2️⃣ ゴースト機能</div>
+        <div class="step-content">
+          ベストタイムを更新すると、そのプレイが「ゴースト」として記録されます。次のプレイでゴースト走行が表示され、自分との対比ができます。
+        </div>
+        <div class="key-info">
+G : ゴースト ON/OFF
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">3️⃣ タイムランキング</div>
+        <div class="step-content">
+          各コースで最速タイムを目指してプレイします。スタート地点から出発し、ゴール地点を目指しましょう。ゴールするとタイムが記録されます。
+        </div>
+        <div class="key-info">
+• 最速タイムは「Best」に保存<br>
+• Top5ランキングに入ると「Top 5」に記録<br>
+• コース切替またはリセットでカウントダウン開始
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title">4️⃣ その他の機能</div>
+        <div class="step-content">
+          ゲーム中にP キーを押すことでいつでもこのチュートリアルを表示できます。
+        </div>
+        <div class="key-info">
+P : チュートリアル表示<br>
+リセット : ゲームをリセット
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button id="skipTutorialBtn" class="btn">閉じる</button>
+      </div>
     </div>
   </div>
 
@@ -423,26 +432,6 @@ P : 一時停止 / 再開
     <ol id="rankList"></ol>
   </div>
 
-  <button id="tutorialButton">チュートリアル</button>
-
-  <div id="tutorialOverlay">
-    <div id="tutorialModal">
-      <div class="title" id="tutorialTitle">チュートリアル</div>
-      <div class="step-indicator" id="tutorialStep">ステップ 1/5</div>
-      <div class="content" id="tutorialContent">
-        <!-- JavaScriptで動的に更新されます -->
-      </div>
-      <div class="progress-dots" id="tutorialDots">
-        <!-- JavaScriptで動的に生成されます -->
-      </div>
-      <div class="controls">
-        <button class="btn" id="tutorialPrevBtn">← 前へ</button>
-        <button class="btn primary" id="tutorialNextBtn">次へ →</button>
-        <button class="btn" id="tutorialSkipBtn">スキップ</button>
-      </div>
-    </div>
-  </div>
-
   <script>
     const canvas = document.getElementById("renderCanvas");
     const engine = new BABYLON.Engine(canvas, true, { stencil: false });
@@ -455,6 +444,8 @@ P : 一時停止 / 再開
 
     const messageEl  = document.getElementById("message");
     const pauseEl    = document.getElementById("pauseOverlay");
+    const tutorialOverlay = document.getElementById("tutorialOverlay");
+    const skipTutorialBtn = document.getElementById("skipTutorialBtn");
 
     const rankCourseLabel = document.getElementById("rankingCourse");
     const rankListEl = document.getElementById("rankList");
@@ -493,151 +484,6 @@ P : 一時停止 / 再開
       };
       return { beep, triple };
     })();
-
-    // ===== チュートリアルシステム =====
-    const TUTORIAL_STEPS = [
-      {
-        title: "🏁 ようこそ！",
-        content: `
-          <p>このゲームは<strong>3Dカーレーシングゲーム</strong>です。</p>
-          <p>ゴール地点まで車を走らせて、タイムを記録しましょう！</p>
-          <p>チュートリアルで基本操作をマスターできます。</p>
-        `
-      },
-      {
-        title: "🎮 基本操作",
-        content: `
-          <p><strong>移動・旋回：</strong></p>
-          <div class="key-binding"><strong>W / ↑</strong> キー：前進</div>
-          <div class="key-binding"><strong>S / ↓</strong> キー：後退</div>
-          <div class="key-binding"><strong>A / ←</strong> キー：左に旋回</div>
-          <div class="key-binding"><strong>D / →</strong> キー：右に旋回</div>
-          <div class="key-binding"><strong>Space</strong> キー：ブレーキ</div>
-          <p>※ マウスを動かすと視点を変更できます</p>
-        `
-      },
-      {
-        title: "⏱️ ゲームモード",
-        content: `
-          <p><strong>タイムアタック：</strong> ゴール到達までの時間を競います。</p>
-          <p><strong>フリーラン：</strong> 時間制限なしで自由に走行できます。</p>
-          <p>画面左下の<strong>「リセット」</strong>ボタンでゲームを再スタートできます。</p>
-          <p>リセット後、カウントダウン（3, 2, 1...）でゲーム開始！</p>
-        `
-      },
-      {
-        title: "🏆 ランキング機能",
-        content: `
-          <p>ゴール時のタイムが自動的に記録されます。</p>
-          <p>画面右下の<strong>「Top 5」</strong>パネルで:</p>
-          <p>• <strong>Best：</strong> そのコースの最速タイム</p>
-          <p>• <strong>Ghost：</strong> 前回のプレイ映像を再生</p>
-          <p>• <strong>Top 5：</strong> ベストタイム5位までの記録</p>
-          <p><strong>G キー</strong>でゴースト ON/OFF を切り替え。</p>
-        `
-      },
-      {
-        title: "💡 便利な機能",
-        content: `
-          <p><strong>P キー：</strong>ゲームを一時停止/再開</p>
-          <p><strong>コース選択：</strong>画面上部中央で複数のコースから選べます</p>
-          <p><strong>ビットマップ読込：</strong>PNG/BMP画像からカスタムコースを生成</p>
-          <p>（白=走行路、黒=壁、青=スタート、緑=ゴール、赤=障害物）</p>
-          <p>ヘルプボタン「?」で操作説明をいつでも確認できます。</p>
-        `
-      }
-    ];
-
-    let tutorialCurrentStep = 0;
-    let tutorialCompleted = false;
-
-    const tutorialOverlay = document.getElementById("tutorialOverlay");
-    const tutorialModal = document.getElementById("tutorialModal");
-    const tutorialTitle = document.getElementById("tutorialTitle");
-    const tutorialStep = document.getElementById("tutorialStep");
-    const tutorialContent = document.getElementById("tutorialContent");
-    const tutorialDots = document.getElementById("tutorialDots");
-    const tutorialPrevBtn = document.getElementById("tutorialPrevBtn");
-    const tutorialNextBtn = document.getElementById("tutorialNextBtn");
-    const tutorialSkipBtn = document.getElementById("tutorialSkipBtn");
-    const tutorialButton = document.getElementById("tutorialButton");
-
-    function initTutorialDots() {
-      tutorialDots.innerHTML = "";
-      for (let i = 0; i < TUTORIAL_STEPS.length; i++) {
-        const dot = document.createElement("div");
-        dot.className = "dot";
-        if (i === tutorialCurrentStep) dot.classList.add("active");
-        dot.addEventListener("click", () => showTutorialStep(i));
-        tutorialDots.appendChild(dot);
-      }
-    }
-
-    function showTutorialStep(stepIndex) {
-      tutorialCurrentStep = Math.max(0, Math.min(stepIndex, TUTORIAL_STEPS.length - 1));
-      const step = TUTORIAL_STEPS[tutorialCurrentStep];
-
-      tutorialTitle.textContent = step.title;
-      tutorialStep.textContent = `ステップ ${tutorialCurrentStep + 1}/${TUTORIAL_STEPS.length}`;
-      tutorialContent.innerHTML = step.content;
-
-      // ボタン状態更新
-      tutorialPrevBtn.disabled = tutorialCurrentStep === 0;
-      tutorialNextBtn.disabled = tutorialCurrentStep === TUTORIAL_STEPS.length - 1;
-      if (tutorialCurrentStep === TUTORIAL_STEPS.length - 1) {
-        tutorialNextBtn.textContent = "完了";
-      } else {
-        tutorialNextBtn.textContent = "次へ →";
-      }
-
-      // ドット更新
-      initTutorialDots();
-
-      SFX.beep(880, 100, "sine", 0.03);
-    }
-
-    function showTutorial() {
-      tutorialCurrentStep = 0;
-      tutorialOverlay.classList.add("show");
-      showTutorialStep(0);
-    }
-
-    function hideTutorial() {
-      tutorialOverlay.classList.remove("show");
-      if (tutorialCurrentStep === TUTORIAL_STEPS.length - 1) {
-        tutorialCompleted = true;
-        localStorage.setItem("tutorialCompleted", "true");
-      }
-    }
-
-    tutorialButton.addEventListener("click", showTutorial);
-    tutorialPrevBtn.addEventListener("click", () => {
-      if (tutorialCurrentStep > 0) showTutorialStep(tutorialCurrentStep - 1);
-    });
-    tutorialNextBtn.addEventListener("click", () => {
-      if (tutorialCurrentStep < TUTORIAL_STEPS.length - 1) {
-        showTutorialStep(tutorialCurrentStep + 1);
-      } else {
-        hideTutorial();
-      }
-    });
-    tutorialSkipBtn.addEventListener("click", hideTutorial);
-
-    // オーバーレイをクリックしてもモーダルの中身をクリックしたら閉じない
-    tutorialOverlay.addEventListener("click", (e) => {
-      if (e.target === tutorialOverlay) {
-        hideTutorial();
-      }
-    });
-
-    // 初回プレイ時に自動表示
-    function checkFirstPlay() {
-      const isFirstPlay = localStorage.getItem("firstPlayCompleted") === null;
-      if (isFirstPlay) {
-        setTimeout(() => showTutorial(), 500);
-        localStorage.setItem("firstPlayCompleted", "true");
-      }
-    }
 
     const createScene = function () {
       const scene = new BABYLON.Scene(engine);
@@ -1809,6 +1655,24 @@ return h;
       function showPauseOverlay() { pauseEl.style.display = "block"; }
       function hidePauseOverlay() { pauseEl.style.display = "none"; }
 
+      // ===== チュートリアル =====
+      function showTutorial() {
+        tutorialOverlay.classList.add("active");
+      }
+
+      function hideTutorial() {
+        tutorialOverlay.classList.remove("active");
+      }
+
+      skipTutorialBtn.addEventListener("click", hideTutorial);
+      
+      // チュートリアルオーバーレイ外側をクリックして閉じる
+      tutorialOverlay.addEventListener("click", (e) => {
+        if (e.target === tutorialOverlay) {
+          hideTutorial();
+        }
+      });
+
       // ===== Pause =====
       let isPaused = false;
       let isGoalReached = false;
@@ -1894,6 +1758,11 @@ return h;
         if (key === "p" && !inputMap["p"]) {
           if (isPaused) resumeGame();
           else if (isTiming && !isGoalReached) pauseGame(inputMap);
+        }
+
+        // T キーでもチュートリアル表示
+        if ((key === "t" || key === "？") && !inputMap[key]) {
+          showTutorial();
         }
 
         inputMap[key] = true;
@@ -2499,9 +2368,6 @@ return h;
     const scene = createScene();
     engine.runRenderLoop(() => scene.render());
     window.addEventListener("resize", () => engine.resize());
-
-    // チュートリアル初回表示チェック
-    checkFirstPlay();
   </script>
 </body>
 </html>
