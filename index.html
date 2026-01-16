@@ -298,6 +298,64 @@
       background: rgba(255, 255, 255, 0.15);
       color: #fff;
     }
+
+    /* ミニマップ */
+    #minimapContainer {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 19;
+      width: 180px;
+      height: 180px;
+      background: rgba(0, 0, 0, 0.65);
+      border: 2px solid rgba(255, 193, 7, 0.4);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      padding: 8px;
+    }
+    #minimapLabel {
+      position: absolute;
+      top: 6px;
+      left: 10px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 700;
+      z-index: 2;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    #minimapCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ポーズ情報パネル */
+    #pauseInfo {
+      position: fixed;
+      top: 200px;
+      right: 10px;
+      z-index: 19;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 193, 7, 0.4);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      display: none;
+      pointer-events: none;
+    }
+    #pauseInfo.show {
+      display: block;
+    }
+    #pauseInfo .key {
+      display: inline-block;
+      min-width: 50px;
+      font-weight: 800;
+      color: #ffc107;
+    }
   </style>
 </head>
 <body>
@@ -309,20 +367,6 @@
     Best: <span id="bestValue">--</span><br>
     Ghost: <span id="ghostValue">--</span><br>
     Δ: <span id="deltaValue">--</span>
-  </div>
-
-  <div id="help">
-操作説明:
-W / ↑ : 前進
-S / ↓ : 後退
-A / ← : 左旋回
-D / → : 右旋回
-Space : ブレーキ
-G : ゴースト ON/OFF
-P : 一時停止 / 再開
-T : チュートリアル表示
-
-※ リセット/コース切替でカウントダウン開始
   </div>
 
   <div id="courseSelector">
@@ -337,6 +381,15 @@ T : チュートリアル表示
   <div class="bitmapLegend">白=道路 / 黒=壁 / 青=スタート / 緑=ゴール / 赤=障害物</div>
 
   <button id="resetButton">リセット</button>
+
+  <div id="minimapContainer">
+    <div id="minimapLabel">MAP</div>
+    <canvas id="minimapCanvas" width="164" height="164"></canvas>
+  </div>
+
+  <div id="pauseInfo">
+    <div><span class="key">P</span> 再開</div>
+  </div>
 
   <div id="message">GOAL!</div>
 
@@ -456,6 +509,16 @@ P : チュートリアル表示<br>
 
     const holdTextEl = document.getElementById("holdText");
     const holdFillEl = document.querySelector("#holdBar > div");
+
+    // ミニマップ用キャンバス
+    const minimapCanvas = document.getElementById("minimapCanvas");
+    const minimapCtx = minimapCanvas.getContext("2d");
+    let minimapScale = 1;
+    let minimapOffsetX = 0;
+    let minimapOffsetY = 0;
+
+    // ポーズ情報パネル
+    const pauseInfoEl = document.getElementById("pauseInfo");
 
     // ===== 効果音（WebAudio） =====
     const SFX = (() => {
@@ -1652,8 +1715,14 @@ return h;
       // ===== 表示 =====
       function showMessage(text) { messageEl.style.display = "block"; messageEl.textContent = text; }
       function hideMessage() { messageEl.style.display = "none"; messageEl.textContent = ""; }
-      function showPauseOverlay() { pauseEl.style.display = "block"; }
-      function hidePauseOverlay() { pauseEl.style.display = "none"; }
+      function showPauseOverlay() { 
+        pauseEl.style.display = "block"; 
+        pauseInfoEl.classList.add("show");
+      }
+      function hidePauseOverlay() { 
+        pauseEl.style.display = "none"; 
+        pauseInfoEl.classList.remove("show");
+      }
 
       // ===== チュートリアル =====
       function showTutorial() {
@@ -2362,11 +2431,147 @@ return h;
         }
       });
 
+      // ミニマップ用にシーンにデータを保存
+      scene.car = { carBody };
+      scene.course = { colliders };
+      scene.startPos = startArea.position;
+      scene.goalPos = goalArea.position;
+      scene.groundSize = groundSize;
+
       return scene;
     };
 
+    // ===== ミニマップ関数 =====
+    function updateMinimapBounds(course) {
+      // コースサイズに基づいてミニマップのスケーリングを調整
+      const mapSize = 164;
+      
+      // デフォルトコース向けのスケーリング
+      minimapScale = mapSize / 200;
+      minimapOffsetX = 82;
+      minimapOffsetY = 82;
+    }
+
+    function drawMinimap(car, course, startPos, goalPos) {
+      // ミニマップキャンバスをクリア
+      minimapCtx.fillStyle = "rgba(0, 0, 0, 0.6)";
+      minimapCtx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+      
+      // 枠線を描画
+      minimapCtx.strokeStyle = "rgba(255, 193, 7, 0.6)";
+      minimapCtx.lineWidth = 1;
+      minimapCtx.strokeRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+      
+      // コース要素を描画（簡略化された矩形表示）
+      minimapCtx.strokeStyle = "rgba(200, 200, 200, 0.6)";
+      minimapCtx.lineWidth = 1.5;
+      
+      // グリッド線で道路を表現（デフォルトコース向け）
+      const gridSize = 20;
+      minimapCtx.strokeStyle = "rgba(150, 150, 150, 0.3)";
+      minimapCtx.lineWidth = 0.5;
+      for (let i = 0; i <= 164; i += gridSize) {
+        minimapCtx.beginPath();
+        minimapCtx.moveTo(i, 0);
+        minimapCtx.lineTo(i, 164);
+        minimapCtx.stroke();
+        
+        minimapCtx.beginPath();
+        minimapCtx.moveTo(0, i);
+        minimapCtx.lineTo(164, i);
+        minimapCtx.stroke();
+      }
+      
+      // 外側の壁
+      minimapCtx.strokeStyle = "rgba(200, 200, 200, 0.8)";
+      minimapCtx.lineWidth = 2;
+      minimapCtx.strokeRect(14, 14, 136, 136);
+      
+      // コース内のコライダーを描画（存在する場合）
+      if (course && course.colliders && course.colliders.length > 0) {
+        minimapCtx.fillStyle = "rgba(100, 100, 100, 0.4)";
+        minimapCtx.strokeStyle = "rgba(180, 180, 180, 0.7)";
+        minimapCtx.lineWidth = 1;
+        
+        course.colliders.forEach(collider => {
+          if (collider && collider.position) {
+            const cx = (collider.position.x / 200) * 164 + 82;
+            const cz = (collider.position.z / 200) * 164 + 82;
+            const w = collider.scaling ? collider.scaling.x * 2 : 20;
+            const d = collider.scaling ? collider.scaling.z * 2 : 20;
+            
+            const rectW = (w / 200) * 164;
+            const rectH = (d / 200) * 164;
+            
+            minimapCtx.fillRect(cx - rectW / 2, cz - rectH / 2, rectW, rectH);
+            minimapCtx.strokeRect(cx - rectW / 2, cz - rectH / 2, rectW, rectH);
+          }
+        });
+      }
+      
+      // スタート地点を描画
+      if (startPos) {
+        const sx = (startPos.x / 200) * 164 + 82;
+        const sz = (startPos.z / 200) * 164 + 82;
+        minimapCtx.fillStyle = "rgba(0, 150, 255, 0.9)";
+        minimapCtx.beginPath();
+        minimapCtx.arc(sx, sz, 4, 0, Math.PI * 2);
+        minimapCtx.fill();
+        
+        // スタートラベル
+        minimapCtx.fillStyle = "rgba(100, 200, 255, 0.9)";
+        minimapCtx.font = "bold 9px Arial";
+        minimapCtx.textAlign = "center";
+        minimapCtx.fillText("S", sx, sz + 11);
+      }
+      
+      // ゴール地点を描画
+      if (goalPos) {
+        const gx = (goalPos.x / 200) * 164 + 82;
+        const gz = (goalPos.z / 200) * 164 + 82;
+        minimapCtx.fillStyle = "rgba(100, 255, 100, 0.9)";
+        minimapCtx.beginPath();
+        minimapCtx.arc(gx, gz, 4, 0, Math.PI * 2);
+        minimapCtx.fill();
+        
+        // ゴールラベル
+        minimapCtx.fillStyle = "rgba(150, 255, 100, 0.9)";
+        minimapCtx.font = "bold 9px Arial";
+        minimapCtx.textAlign = "center";
+        minimapCtx.fillText("G", gx, gz + 11);
+      }
+      
+      // 車の位置を描画
+      if (car && car.carBody) {
+        const carPos = car.carBody.getAbsolutePosition();
+        const cx = (carPos.x / 200) * 164 + 82;
+        const cz = (carPos.z / 200) * 164 + 82;
+        
+        // 車の本体
+        minimapCtx.fillStyle = "#ff6b6b";
+        minimapCtx.beginPath();
+        minimapCtx.arc(cx, cz, 5, 0, Math.PI * 2);
+        minimapCtx.fill();
+      }
+    }
+
     const scene = createScene();
-    engine.runRenderLoop(() => scene.render());
+    
+    // ミニマップの初期設定
+    updateMinimapBounds(scene.course || {});
+    
+    engine.runRenderLoop(() => {
+      scene.render();
+      // ゲームループ内でミニマップを更新
+      if (scene.car && scene.course) {
+        drawMinimap(
+          scene.car,
+          scene.course,
+          scene.startPos,
+          scene.goalPos
+        );
+      }
+    });
     window.addEventListener("resize", () => engine.resize());
   </script>
 </body>
