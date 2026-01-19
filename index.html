@@ -174,12 +174,30 @@
       color: #ffc107;
     }
 
-    #resetButton {
-      position:fixed; bottom:10px; left:10px; padding:9px 14px; font-size:14px;
-      border-radius:8px; border:none; background:rgba(0,0,0,0.7); color:#fff; cursor:pointer; z-index:20;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    #controlsPanel {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+      user-select: none;
     }
-    #resetButton:hover { background:rgba(255,255,255,0.15); }
+    
+    #resetButton {
+      padding: 9px 14px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      transition: all 0.2s ease;
+    }
+    #resetButton:hover { background: rgba(255, 255, 255, 0.15); }
 
     /* ランキングパネル */
     #rankingPanel{
@@ -422,6 +440,84 @@
       font-weight: 800;
       color: #ffc107;
     }
+    
+    /* サウンド制御UI */
+    #soundControl {
+      color: #fff;
+      background: rgba(0, 0, 0, 0.65);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    }
+    #soundToggleBtn {
+      background: rgba(255, 193, 7, 0.15);
+      border: 1px solid rgba(255, 193, 7, 0.4);
+      color: #ffc107;
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 11px;
+      min-width: 50px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    #soundToggleBtn:hover {
+      background: rgba(255, 193, 7, 0.25);
+      border-color: rgba(255, 193, 7, 0.6);
+    }
+    #volumeContainer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #volumeSlider {
+      width: 100px;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+    #volumeSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      background: #ffc107;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    #volumeSlider::-webkit-slider-thumb:hover {
+      background: #ffeb3b;
+      transform: scale(1.2);
+    }
+    #volumeSlider::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      background: #ffc107;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    #volumeSlider::-moz-range-thumb:hover {
+      background: #ffeb3b;
+      transform: scale(1.2);
+    }
+    #volumeLabel {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+      min-width: 30px;
+      text-align: right;
+    }
   </style>
 </head>
 <body>
@@ -460,7 +556,17 @@
   </div>
   <div class="bitmapLegend">白=道路 / 黒=壁 / 青=スタート / 緑=ゴール / 赤=障害物</div>
 
-  <button id="resetButton">リセット</button>
+  <div id="controlsPanel">
+    <button id="resetButton">リセット</button>
+    <div id="soundControl">
+      <button id="soundToggleBtn">🔊 ON</button>
+      <div id="volumeContainer">
+        <label for="volumeSlider" style="font-size: 11px; color: rgba(255,255,255,0.7);">Vol:</label>
+        <input type="range" id="volumeSlider" min="0" max="100" value="30">
+        <div id="volumeLabel">30%</div>
+      </div>
+    </div>
+  </div>
 
   <div id="minimapContainer">
     <div id="minimapLabel">MAP</div>
@@ -603,15 +709,33 @@ P : チュートリアル表示<br>
     // ポーズ情報パネル
     const pauseInfoEl = document.getElementById("pauseInfo");
 
+    // サウンド制御UI
+    const soundControl = document.getElementById("soundControl");
+    const soundToggleBtn = document.getElementById("soundToggleBtn");
+    const volumeSlider = document.getElementById("volumeSlider");
+    const volumeLabel = document.getElementById("volumeLabel");
+
     // ===== 効果音（WebAudio） =====
     const SFX = (() => {
       let ctx = null;
+      let masterGain = null;
+      let soundEnabled = true;
+      let engineOscillator = null;
+      let engineGain = null;
+
       const ensure = () => {
-        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (!ctx) {
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+          masterGain = ctx.createGain();
+          masterGain.connect(ctx.destination);
+          masterGain.gain.value = 0.3;
+        }
         if (ctx.state === "suspended") ctx.resume();
         return ctx;
       };
+
       const beep = (freq = 880, durationMs = 120, type = "sine", gain = 0.05) => {
+        if (!soundEnabled) return;
         const c = ensure();
         const o = c.createOscillator();
         const g = c.createGain();
@@ -619,19 +743,160 @@ P : チュートリアル表示<br>
         o.frequency.value = freq;
         g.gain.value = gain;
         o.connect(g);
-        g.connect(c.destination);
+        g.connect(masterGain);
         o.start();
         o.stop(c.currentTime + durationMs / 1000);
       };
+
       const triple = () => {
         beep(660, 90, "triangle", 0.04);
         setTimeout(() => beep(880, 90, "triangle", 0.05), 120);
         setTimeout(() => beep(1180, 120, "triangle", 0.06), 250);
       };
-      return { beep, triple };
+
+      // エンジン音（速度に応じた周波数変化）
+      const startEngine = () => {
+        if (!soundEnabled) return;
+        const c = ensure();
+        
+        // 既存のエンジン音を停止
+        if (engineOscillator) {
+          try {
+            engineOscillator.stop();
+          } catch (e) {}
+        }
+        
+        engineOscillator = c.createOscillator();
+        engineGain = c.createGain();
+        
+        engineOscillator.type = "sine";
+        engineOscillator.frequency.value = 200; // 基本周波数
+        engineGain.gain.value = 0.03;
+        
+        engineOscillator.connect(engineGain);
+        engineGain.connect(masterGain);
+        engineOscillator.start();
+      };
+
+      const updateEngineSound = (speedKmh) => {
+        if (!soundEnabled || !engineOscillator || !engineGain) return;
+        
+        const c = ensure();
+        
+        // 速度に応じてエンジン音の周波数とゲインを変更
+        const maxSpeed = 126;
+        const speedRatio = Math.min(1, speedKmh / maxSpeed);
+        
+        // 周波数：200Hz～1200Hzで変化
+        const targetFreq = 200 + (speedRatio * 1000);
+        
+        // ゲイン：速度が上がるとゲインも上昇
+        const targetGain = 0.02 + (speedRatio * 0.08);
+        
+        engineOscillator.frequency.exponentialRampToValueAtTime(targetFreq, c.currentTime + 0.05);
+        engineGain.gain.setTargetAtTime(targetGain, c.currentTime, 0.02);
+      };
+
+      const stopEngine = () => {
+        if (engineOscillator) {
+          try {
+            engineOscillator.stop();
+          } catch (e) {}
+          engineOscillator = null;
+        }
+      };
+
+      // 衝突音
+      const playCollisionSound = (impactForce = 1) => {
+        if (!soundEnabled) return;
+        
+        // 衝突の強さに応じた周波数
+        const freq = Math.max(200, Math.min(600, 600 - impactForce * 100));
+        const duration = Math.max(50, Math.min(200, impactForce * 150));
+        const gain = Math.min(0.15, impactForce * 0.1);
+        
+        beep(freq, duration, "square", gain);
+        
+        // エコーのような効果
+        setTimeout(() => beep(freq * 0.7, duration * 0.6, "sine", gain * 0.4), 80);
+      };
+
+      // ゴール音（3段階の勝利サウンド）
+      const playGoalSound = () => {
+        if (!soundEnabled) return;
+        
+        beep(523, 200, "sine", 0.08);  // ド
+        setTimeout(() => beep(659, 200, "sine", 0.08), 250);  // ミ
+        setTimeout(() => beep(784, 300, "sine", 0.1), 500);  // ソ
+      };
+
+      // UI操作音
+      const playUISound = (type = "select") => {
+        if (!soundEnabled) return;
+        
+        if (type === "select") {
+          beep(880, 100, "sine", 0.05);
+        } else if (type === "confirm") {
+          beep(1047, 80, "sine", 0.06);
+          setTimeout(() => beep(1318, 100, "sine", 0.07), 100);
+        } else if (type === "cancel") {
+          beep(523, 150, "sine", 0.05);
+        } else if (type === "pause") {
+          beep(440, 120, "sine", 0.06);
+          setTimeout(() => beep(440, 120, "sine", 0.06), 150);
+        }
+      };
+
+      // 音量調整
+      const setVolume = (vol) => {
+        ensure();
+        masterGain.gain.value = Math.max(0, Math.min(1, vol));
+      };
+
+      // サウンドの有効/無効切り替え
+      const toggleSound = () => {
+        soundEnabled = !soundEnabled;
+        return soundEnabled;
+      };
+
+      const isSoundEnabled = () => soundEnabled;
+
+      return {
+        beep,
+        triple,
+        startEngine,
+        updateEngineSound,
+        stopEngine,
+        playCollisionSound,
+        playGoalSound,
+        playUISound,
+        setVolume,
+        toggleSound,
+        isSoundEnabled,
+        ctx: ensure
+      };
     })();
 
-    // スピードメーター更新関数（グローバル）
+    // ===== サウンド制御UIイベントリスナー =====
+    soundToggleBtn.addEventListener("click", () => {
+      const enabled = SFX.toggleSound();
+      soundToggleBtn.textContent = enabled ? "🔊 ON" : "🔇 OFF";
+      soundToggleBtn.style.opacity = enabled ? "1" : "0.5";
+      
+      // トグル時の音を再生
+      if (enabled) {
+        SFX.playUISound("select");
+      }
+    });
+
+    volumeSlider.addEventListener("input", (e) => {
+      const volume = parseInt(e.target.value);
+      const normalizedVolume = volume / 100;
+      SFX.setVolume(normalizedVolume);
+      volumeLabel.textContent = volume + "%";
+    });
+
+    // ===== スピードメーター更新関数（グローバル） =====
     const updateSpeedometer = (speedKmh) => {
       const maxSpeed = 126; // 最高速度を km/h で設定
       const percentage = Math.min(100, (speedKmh / maxSpeed) * 100);
@@ -1875,6 +2140,9 @@ return h;
         startTimeMs = performance.now() - elapsedMs;
         isTiming = true;
         controlsEnabled = true;
+        
+        // エンジン音を再開
+        SFX.startEngine();
 
         hidePauseOverlay();
       }
@@ -1916,6 +2184,9 @@ return h;
         startTimeMs = performance.now();
         elapsedMs = 0;
         isTiming = true;
+        
+        // ゲーム開始時にエンジン音をスタート
+        SFX.startEngine();
       }
 
       // ===== 入力 =====
@@ -2189,6 +2460,9 @@ return h;
         updateRankingHud();
         resetHoldUI();
         prepareGhostForRun();
+        
+        // ゲーム開始UI音
+        SFX.playUISound("confirm");
 
         startCountdown();
       }
@@ -2203,6 +2477,9 @@ return h;
           const cid = btn.dataset.course;
           setActiveButton(cid);
           loadCourse(cid);
+          
+          // UI操作音を再生
+          SFX.playUISound("select");
         });
       });
 
@@ -2396,6 +2673,11 @@ return h;
         const speedKmh = Math.round(absSpeed * 3.6);
         speedLabel.textContent = speedKmh.toString();
         updateSpeedometer(speedKmh);
+        
+        // エンジン音の周波数を速度に応じて更新
+        if (isTiming && SFX.isSoundEnabled()) {
+          SFX.updateEngineSound(speedKmh);
+        }
 
         if (isTiming) {
           elapsedMs = performance.now() - startTimeMs;
@@ -2493,6 +2775,12 @@ return h;
         if (!isGoalReached && isTiming && carBody.intersectsMesh(goalArea, true)) {
           isGoalReached = true;
           controlsEnabled = false;
+
+          // ゴール音再生
+          SFX.playGoalSound();
+          
+          // エンジン音停止
+          SFX.stopEngine();
 
           elapsedMs = performance.now() - startTimeMs;
           isTiming = false;
