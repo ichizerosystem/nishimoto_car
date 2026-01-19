@@ -12,8 +12,74 @@
 
     #hud {
       position:fixed; top:10px; left:10px; color:#fff; background:rgba(0,0,0,0.65);
-      padding:8px 12px; border-radius:8px; font-size:14px; z-index:20; pointer-events:none; line-height:1.55; white-space:nowrap;
+      padding:12px 14px; border-radius:8px; font-size:14px; z-index:20; pointer-events:none;
       box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    }
+    
+    /* スピードメーター */
+    #speedometerContainer {
+      margin-bottom: 10px;
+      width: 200px;
+    }
+    #speedometerLabel {
+      font-size: 11px;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .speedometer-gauge {
+      position: relative;
+      width: 100%;
+      height: 32px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+    .speedometer-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #00ff00 0%, #ffff00 50%, #ff6600 75%, #ff0000 100%);
+      border-radius: 16px;
+      transition: width 0.1s ease-out;
+      box-shadow: 0 0 8px rgba(255, 193, 7, 0.4) inset;
+    }
+    #speedDigital {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'Courier New', monospace;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 193, 7, 0.2);
+    }
+    #speedNumber {
+      font-size: 18px;
+      font-weight: 900;
+      color: #ffff00;
+      text-shadow: 0 0 6px rgba(255, 255, 0, 0.6);
+      min-width: 45px;
+    }
+    #speedUnit {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-left: 4px;
+    }
+    #speedStatus {
+      font-size: 11px;
+      color: rgba(255, 193, 7, 0.9);
+      margin-left: auto;
+    }
+    
+    #hudStats {
+      line-height: 1.55;
+      font-size: 13px;
+    }
+    #hudStats div {
+      margin: 3px 0;
     }
     #help {
       position:fixed; top:10px; right:10px; color:#fff; background:rgba(0,0,0,0.65);
@@ -362,11 +428,25 @@
   <canvas id="renderCanvas"></canvas>
 
   <div id="hud">
-    Speed: <span id="speedValue">0</span> km/h<br>
-    Time: <span id="timeValue">0.00</span> s<br>
-    Best: <span id="bestValue">--</span><br>
-    Ghost: <span id="ghostValue">--</span><br>
-    Δ: <span id="deltaValue">--</span>
+    <div id="speedometerContainer">
+      <div id="speedometerLabel">Speed</div>
+      <div class="speedometer-gauge">
+        <div class="speedometer-bar" id="speedBar"></div>
+      </div>
+      <div id="speedDigital">
+        <div id="speedNumber">0</div>
+        <div id="speedUnit">km/h</div>
+        <div id="speedStatus">IDLE</div>
+      </div>
+      <span id="speedValue" style="display:none;">0</span>
+    </div>
+    
+    <div id="hudStats">
+      <div>Time: <span id="timeValue">0.00</span> s</div>
+      <div>Best: <span id="bestValue">--</span></div>
+      <div>Ghost: <span id="ghostValue">--</span></div>
+      <div>Δ: <span id="deltaValue">--</span></div>
+    </div>
   </div>
 
   <div id="courseSelector">
@@ -490,6 +570,9 @@ P : チュートリアル表示<br>
     const engine = new BABYLON.Engine(canvas, true, { stencil: false });
 
     const speedLabel = document.getElementById("speedValue");
+    const speedNumber = document.getElementById("speedNumber");
+    const speedBar = document.getElementById("speedBar");
+    const speedStatus = document.getElementById("speedStatus");
     const timeLabel  = document.getElementById("timeValue");
     const bestLabel  = document.getElementById("bestValue");
     const ghostLabel = document.getElementById("ghostValue");
@@ -547,6 +630,28 @@ P : チュートリアル表示<br>
       };
       return { beep, triple };
     })();
+
+    // スピードメーター更新関数（グローバル）
+    const updateSpeedometer = (speedKmh) => {
+      const maxSpeed = 126; // 最高速度を km/h で設定
+      const percentage = Math.min(100, (speedKmh / maxSpeed) * 100);
+      
+      speedNumber.textContent = Math.round(speedKmh).toString().padStart(3, "0");
+      speedBar.style.width = percentage + "%";
+      
+      // ステータステキストの更新（加速度に基づく）
+      if (speedKmh < 5) {
+        speedStatus.textContent = "IDLE";
+      } else if (speedKmh < 30) {
+        speedStatus.textContent = "SLOW";
+      } else if (speedKmh < 60) {
+        speedStatus.textContent = "NORMAL";
+      } else if (speedKmh < 90) {
+        speedStatus.textContent = "FAST";
+      } else {
+        speedStatus.textContent = "MAX!";
+      }
+    };
 
     const createScene = function () {
       const scene = new BABYLON.Scene(engine);
@@ -2073,6 +2178,7 @@ return h;
         FR.pivot.rotation.y = 0;
 
         speedLabel.textContent = "0";
+        updateSpeedometer(0);
         timeLabel.textContent = "0.00";
 
         for (const k in inputMap) inputMap[k] = false;
@@ -2287,7 +2393,9 @@ return h;
 
         updateVertical(dt);
 
-        speedLabel.textContent = Math.round(absSpeed * 3.6).toString();
+        const speedKmh = Math.round(absSpeed * 3.6);
+        speedLabel.textContent = speedKmh.toString();
+        updateSpeedometer(speedKmh);
 
         if (isTiming) {
           elapsedMs = performance.now() - startTimeMs;
