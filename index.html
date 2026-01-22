@@ -9,6 +9,7 @@
   <style>
     html, body { width:100%; height:100%; margin:0; padding:0; overflow:hidden; background:#000; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
     #renderCanvas { width:100%; height:100%; touch-action:none; display:block; }
+    body.modal-open #renderCanvas { pointer-events: none; }
 
     #hud {
       position:fixed; top:10px; left:10px; color:#fff; background:rgba(0,0,0,0.65);
@@ -659,6 +660,257 @@
       background: rgba(255, 193, 7, 0.4);
       border-color: rgba(255, 193, 7, 0.7);
     }
+
+    /* 天候・時間帯システム UI */
+    #weatherPanel {
+      position: fixed;
+      left: 10px;
+      bottom: 80px;
+      z-index: 20;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 193, 7, 0.4);
+      border-radius: 10px;
+      padding: 12px;
+      color: #fff;
+      font-size: 12px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      width: 200px;
+      display: none;
+    }
+
+    #weatherPanel .panel-title {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 8px;
+      color: #ffc107;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .weather-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .weather-option label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 12px;
+    }
+
+    .weather-option input[type="radio"] {
+      cursor: pointer;
+      accent-color: #ffc107;
+    }
+
+    .time-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .time-option label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 12px;
+    }
+
+    .time-option input[type="radio"] {
+      cursor: pointer;
+      accent-color: #ffc107;
+    }
+
+    #weatherStats {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 193, 7, 0.2);
+      font-size: 11px;
+      opacity: 0.85;
+      line-height: 1.4;
+    }
+
+    /* 環境設定ボタン */
+    #environmentBtn {
+      background: rgba(100, 200, 255, 0.2);
+      border: 1px solid rgba(100, 200, 255, 0.5);
+      color: #64c8ff;
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 11px;
+      text-align: center;
+      transition: all 0.2s ease;
+      min-width: 70px;
+    }
+
+    #environmentBtn:hover {
+      background: rgba(100, 200, 255, 0.3);
+      border-color: rgba(100, 200, 255, 0.8);
+    }
+
+    /* 環境設定モーダルオーバーレイ */
+    #environmentOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 50;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      pointer-events: auto;
+    }
+
+    #environmentOverlay.active {
+      display: flex;
+    }
+
+    #environmentPanel {
+      position: relative;
+      z-index: 1;
+      pointer-events: auto;
+      background: linear-gradient(135deg, rgba(30, 40, 60, 0.95), rgba(40, 50, 80, 0.95));
+      border: 2px solid rgba(100, 200, 255, 0.5);
+      border-radius: 16px;
+      padding: 30px 40px;
+      max-width: 480px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      color: #fff;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(100, 200, 255, 0.2);
+      animation: slideUp 0.4s ease-out;
+    }
+
+    #environmentPanel .title {
+      font-size: 26px;
+      font-weight: 900;
+      margin-bottom: 20px;
+      color: #64c8ff;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .env-section {
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(100, 200, 255, 0.2);
+    }
+
+    .env-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .env-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #64c8ff;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.9;
+    }
+
+    .env-button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .env-toggle-btn {
+      padding: 12px 16px;
+      border: 2px solid rgba(100, 200, 255, 0.3);
+      background: rgba(100, 200, 255, 0.08);
+      color: rgba(100, 200, 255, 0.8);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .env-toggle-btn:hover {
+      background: rgba(100, 200, 255, 0.15);
+      border-color: rgba(100, 200, 255, 0.6);
+      color: #64c8ff;
+    }
+
+    .env-toggle-btn.active {
+      background: rgba(100, 200, 255, 0.4);
+      border-color: #64c8ff;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(100, 200, 255, 0.5);
+    }
+
+    #environmentPanel .button-group {
+      margin-top: 28px;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    #environmentPanel .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+
+    #closeEnvironmentBtn {
+      background: rgba(100, 200, 255, 0.3);
+      color: #64c8ff;
+      border: 1px solid rgba(100, 200, 255, 0.5);
+    }
+
+    #closeEnvironmentBtn:hover {
+      background: rgba(100, 200, 255, 0.4);
+      border-color: rgba(100, 200, 255, 0.7);
+    }
+
+    #envStatsPanel {
+      background: rgba(100, 200, 255, 0.08);
+      border-left: 3px solid #64c8ff;
+      padding: 12px 14px;
+      border-radius: 6px;
+      margin-top: 16px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    #envStatsPanel div {
+      margin: 4px 0;
+    }
+
+    .env-stat-label {
+      color: #64c8ff;
+      font-weight: 700;
+    }
+
+    .env-stat-value {
+      color: rgba(255, 255, 255, 0.9);
+      margin-left: 6px;
+    }
   </style>
 </head>
 <body>
@@ -700,12 +952,109 @@
   <div id="controlsPanel">
     <button id="resetButton">リセット</button>
     <button id="customizeBtn">🎨 カスタマイズ</button>
+    <button type="button" id="environmentBtn">🌍 環境設定</button>
     <div id="soundControl">
       <button id="soundToggleBtn">🔊 ON</button>
       <div id="volumeContainer">
         <label for="volumeSlider" style="font-size: 11px; color: rgba(255,255,255,0.7);">Vol:</label>
         <input type="range" id="volumeSlider" min="0" max="100" value="30">
         <div id="volumeLabel">30%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 天候・時間帯パネル -->
+  <div id="weatherPanel">
+    <div class="panel-title">☀️ 環境設定</div>
+
+    <div style="margin-bottom: 10px;">
+      <div style="font-weight: 700; font-size: 11px; opacity: 0.8; margin-bottom: 4px;">時間帯</div>
+      <div class="time-option">
+        <label>
+          <input type="radio" name="timeOfDay" value="dawn" id="timeDawn">
+          朝（明け方）
+        </label>
+      </div>
+      <div class="time-option">
+        <label>
+          <input type="radio" name="timeOfDay" value="noon" id="timeNoon" checked>
+          昼（真昼）
+        </label>
+      </div>
+      <div class="time-option">
+        <label>
+          <input type="radio" name="timeOfDay" value="evening" id="timeEvening">
+          夕方（夕焼け）
+        </label>
+      </div>
+      <div class="time-option">
+        <label>
+          <input type="radio" name="timeOfDay" value="night" id="timeNight">
+          夜（暗い）
+        </label>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-weight: 700; font-size: 11px; opacity: 0.8; margin-bottom: 4px;">天候</div>
+      <div class="weather-option">
+        <label>
+          <input type="radio" name="weather" value="clear" id="weatherClear" checked>
+          晴れ
+        </label>
+      </div>
+      <div class="weather-option">
+        <label>
+          <input type="radio" name="weather" value="cloudy" id="weatherCloudy">
+          曇り
+        </label>
+      </div>
+      <div class="weather-option">
+        <label>
+          <input type="radio" name="weather" value="rain" id="weatherRain">
+          雨
+        </label>
+      </div>
+    </div>
+
+    <div id="weatherStats">
+      <div>🌡️ 環境: <span id="envLabel">晴れ・昼</span></div>
+      <div>🎭 ライティング: <span id="lightingLabel">標準</span></div>
+    </div>
+  </div>
+
+  <!-- 環境設定モーダル -->
+  <div id="environmentOverlay">
+    <div id="environmentPanel">
+      <div class="title">🌍 環境設定</div>
+
+      <div class="env-section">
+        <div class="env-section-title">⏰ 時間帯を選択</div>
+        <div class="env-button-group">
+          <button type="button" class="env-toggle-btn" data-time="dawn" onclick="changeTimeOfDay('dawn')">🌅 朝（明け方）</button>
+          <button type="button" class="env-toggle-btn" data-time="noon" onclick="changeTimeOfDay('noon')">☀️ 昼（真昼）</button>
+          <button type="button" class="env-toggle-btn" data-time="evening" onclick="changeTimeOfDay('evening')">🌇 夕方（夕焼け）</button>
+          <button type="button" class="env-toggle-btn" data-time="night" onclick="changeTimeOfDay('night')">🌙 夜（暗い）</button>
+        </div>
+      </div>
+
+      <div class="env-section">
+        <div class="env-section-title">⛅ 天候を選択</div>
+        <div class="env-button-group">
+          <button type="button" class="env-toggle-btn" data-weather="clear" onclick="changeWeather('clear')">☀️ 晴れ</button>
+          <button type="button" class="env-toggle-btn" data-weather="cloudy" onclick="changeWeather('cloudy')">☁️ 曇り</button>
+          <button type="button" class="env-toggle-btn" data-weather="rain" onclick="changeWeather('rain')">🌧️ 雨</button>
+        </div>
+      </div>
+
+      <div id="envStatsPanel">
+        <div><span class="env-stat-label">現在の環境:</span><span class="env-stat-value" id="envStatsCurrent">晴れ・昼</span></div>
+        <div><span class="env-stat-label">ライティング:</span><span class="env-stat-value" id="envStatsLighting">標準</span></div>
+        <div><span class="env-stat-label">フォグ密度:</span><span class="env-stat-value" id="envStatsFog">低</span></div>
+      </div>
+
+      <div class="button-group">
+        <button type="button" id="closeEnvironmentBtn" class="btn">完了</button>
       </div>
     </div>
   </div>
@@ -731,6 +1080,7 @@
 <span class="key">D / →</span> 右旋回
 <span class="key">Space</span> ブレーキ
 <span class="key">G</span> ゴースト ON/OFF
+<span class="key">E</span> 環境設定
 <span class="key">T</span> チュートリアル
 <span class="key">リセット</span> 左下ボタン
     </div>
@@ -924,6 +1274,251 @@ P : チュートリアル表示<br>
     const soundToggleBtn = document.getElementById("soundToggleBtn");
     const volumeSlider = document.getElementById("volumeSlider");
     const volumeLabel = document.getElementById("volumeLabel");
+
+    // ===== 天候・時間帯システム =====
+    const weatherPanel = document.getElementById("weatherPanel");
+    const weatherElements = {
+      timeOfDay: {
+        dawn: document.getElementById("timeDawn"),
+        noon: document.getElementById("timeNoon"),
+        evening: document.getElementById("timeEvening"),
+        night: document.getElementById("timeNight")
+      },
+      weather: {
+        clear: document.getElementById("weatherClear"),
+        cloudy: document.getElementById("weatherCloudy"),
+        rain: document.getElementById("weatherRain")
+      }
+    };
+
+    const envLabel = document.getElementById("envLabel");
+    const lightingLabel = document.getElementById("lightingLabel");
+
+    // グローバル天候・時間帯設定
+    let currentTimeOfDay = "noon";
+    let currentWeather = "clear";
+
+    // 天候・時間帯設定の説明文
+    const weatherDescriptions = {
+      dawn_clear: "晴れ・朝",
+      dawn_cloudy: "曇り・朝",
+      dawn_rain: "雨・朝",
+      noon_clear: "晴れ・昼",
+      noon_cloudy: "曇り・昼",
+      noon_rain: "雨・昼",
+      evening_clear: "晴れ・夕方",
+      evening_cloudy: "曇り・夕方",
+      evening_rain: "雨・夕方",
+      night_clear: "晴れ・夜",
+      night_cloudy: "曇り・夜",
+      night_rain: "雨・夜"
+    };
+
+    // 天候・時間帯システムの状態管理と更新処理
+    class WeatherSystem {
+      constructor(scene) {
+        this.scene = scene;
+        this.currentTimeOfDay = "noon";
+        this.currentWeather = "clear";
+        this.rainParticles = null;
+        this.skybox = null;
+        this.initSkybox();
+      }
+
+      // スカイボックスの初期化
+      initSkybox() {
+        // 立方体メッシュをスカイボックスとして生成
+        this.skybox = BABYLON.MeshBuilder.CreateBox("skybox", { size: 300 }, this.scene);
+        const skyMaterial = new BABYLON.StandardMaterial("skyMaterial", this.scene);
+        skyMaterial.emissiveColor = new BABYLON.Color3(0.7, 0.9, 1.0);
+        skyMaterial.backFaceCulling = false;
+        this.skybox.material = skyMaterial;
+        this.updateSkyboxColor();
+      }
+
+      // スカイボックスの色を更新
+      updateSkyboxColor() {
+        if (!this.skybox || !this.skybox.material) return;
+
+        const colorConfigs = {
+          dawn_clear: new BABYLON.Color3(0.9, 0.7, 0.6),
+          dawn_cloudy: new BABYLON.Color3(0.8, 0.65, 0.55),
+          dawn_rain: new BABYLON.Color3(0.7, 0.6, 0.5),
+          noon_clear: new BABYLON.Color3(0.7, 0.9, 1.0),
+          noon_cloudy: new BABYLON.Color3(0.75, 0.8, 0.9),
+          noon_rain: new BABYLON.Color3(0.6, 0.7, 0.85),
+          evening_clear: new BABYLON.Color3(1.0, 0.7, 0.3),
+          evening_cloudy: new BABYLON.Color3(0.95, 0.75, 0.45),
+          evening_rain: new BABYLON.Color3(0.85, 0.65, 0.35),
+          night_clear: new BABYLON.Color3(0.0, 0.0, 0.05),
+          night_cloudy: new BABYLON.Color3(0.05, 0.05, 0.15),
+          night_rain: new BABYLON.Color3(0.01, 0.01, 0.03)
+        };
+
+        const key = `${this.currentTimeOfDay}_${this.currentWeather}`;
+        const color = colorConfigs[key] || new BABYLON.Color3(0.7, 0.9, 1.0);
+        this.skybox.material.emissiveColor = color;
+      }
+
+      // ライティング設定を更新
+      updateLighting() {
+        const hemiLight = this.scene.getLightByName
+          ? this.scene.getLightByName("hemiLight")
+          : this.scene.getLightByID
+            ? this.scene.getLightByID("hemiLight")
+            : null;
+        const dirLight = this.scene.getLightByName
+          ? this.scene.getLightByName("dirLight")
+          : this.scene.getLightByID
+            ? this.scene.getLightByID("dirLight")
+            : null;
+
+        if (!hemiLight || !dirLight) return;
+
+        const config = this.getLightingConfig();
+
+        hemiLight.intensity = config.hemiIntensity;
+        hemiLight.groundColor = new BABYLON.Color3(config.groundR, config.groundG, config.groundB);
+
+        dirLight.intensity = config.dirIntensity;
+        dirLight.direction = new BABYLON.Vector3(config.dirX, config.dirY, config.dirZ);
+
+        // フォグ設定
+        this.scene.fogColor = new BABYLON.Color3(config.fogR, config.fogG, config.fogB);
+        this.scene.fogDensity = config.fogDensity;
+
+        // 環境光色
+        this.scene.ambientColor = new BABYLON.Color3(config.ambR, config.ambG, config.ambB);
+      }
+
+      // 時間帯に応じたライティング設定を取得
+      getLightingConfig() {
+        const configs = {
+          dawn_clear: {
+            hemiIntensity: 0.6,
+            groundR: 0.3, groundG: 0.2, groundB: 0.4,
+            dirIntensity: 0.5,
+            dirX: 0.3, dirY: -0.8, dirZ: 0.2,
+            fogR: 0.9, fogG: 0.7, fogB: 0.6,
+            fogDensity: 0.012,
+            ambR: 0.8, ambG: 0.6, ambB: 0.7
+          },
+          dawn_cloudy: {
+            hemiIntensity: 0.5,
+            groundR: 0.25, groundG: 0.2, groundB: 0.3,
+            dirIntensity: 0.3,
+            dirX: 0.2, dirY: -0.7, dirZ: 0.1,
+            fogR: 0.8, fogG: 0.75, fogB: 0.85,
+            fogDensity: 0.018,
+            ambR: 0.6, ambG: 0.55, ambB: 0.65
+          },
+          dawn_rain: {
+            hemiIntensity: 0.4,
+            groundR: 0.2, groundG: 0.18, groundB: 0.25,
+            dirIntensity: 0.2,
+            dirX: 0.15, dirY: -0.6, dirZ: 0.05,
+            fogR: 0.7, fogG: 0.7, fogB: 0.8,
+            fogDensity: 0.025,
+            ambR: 0.5, ambG: 0.48, ambB: 0.55
+          },
+          noon_clear: {
+            hemiIntensity: 0.8,
+            groundR: 0.1, groundG: 0.15, groundB: 0.2,
+            dirIntensity: 0.9,
+            dirX: -0.3, dirY: -1, dirZ: 0.2,
+            fogR: 0.7, fogG: 0.9, fogB: 1.0,
+            fogDensity: 0.01,
+            ambR: 0.9, ambG: 0.9, ambB: 0.9
+          },
+          noon_cloudy: {
+            hemiIntensity: 0.7,
+            groundR: 0.15, groundG: 0.15, groundB: 0.2,
+            dirIntensity: 0.5,
+            dirX: -0.2, dirY: -0.8, dirZ: 0.15,
+            fogR: 0.8, fogG: 0.85, fogB: 0.9,
+            fogDensity: 0.015,
+            ambR: 0.75, ambG: 0.75, ambB: 0.75
+          },
+          noon_rain: {
+            hemiIntensity: 0.6,
+            groundR: 0.1, groundG: 0.12, groundB: 0.15,
+            dirIntensity: 0.4,
+            dirX: -0.15, dirY: -0.7, dirZ: 0.1,
+            fogR: 0.75, fogG: 0.78, fogB: 0.85,
+            fogDensity: 0.025,
+            ambR: 0.65, ambG: 0.65, ambB: 0.65
+          },
+          evening_clear: {
+            hemiIntensity: 0.7,
+            groundR: 0.4, groundG: 0.2, groundB: 0.1,
+            dirIntensity: 0.7,
+            dirX: 0.2, dirY: -0.9, dirZ: -0.3,
+            fogR: 1.0, fogG: 0.7, fogB: 0.3,
+            fogDensity: 0.012,
+            ambR: 1.0, ambG: 0.8, ambB: 0.5
+          },
+          evening_cloudy: {
+            hemiIntensity: 0.6,
+            groundR: 0.35, groundG: 0.2, groundB: 0.15,
+            dirIntensity: 0.5,
+            dirX: 0.15, dirY: -0.8, dirZ: -0.2,
+            fogR: 0.95, fogG: 0.75, fogB: 0.45,
+            fogDensity: 0.018,
+            ambR: 0.9, ambG: 0.7, ambB: 0.45
+          },
+          evening_rain: {
+            hemiIntensity: 0.5,
+            groundR: 0.3, groundG: 0.2, groundB: 0.12,
+            dirIntensity: 0.35,
+            dirX: 0.1, dirY: -0.7, dirZ: -0.1,
+            fogR: 0.9, fogG: 0.7, fogB: 0.4,
+            fogDensity: 0.028,
+            ambR: 0.8, ambG: 0.6, ambB: 0.35
+          },
+          night_clear: {
+            hemiIntensity: 0.3,
+            groundR: 0.05, groundG: 0.05, groundB: 0.15,
+            dirIntensity: 0.2,
+            dirX: 0, dirY: -1, dirZ: 0,
+            fogR: 0.0, fogG: 0.0, fogB: 0.05,
+            fogDensity: 0.02,
+            ambR: 0.2, ambG: 0.2, ambB: 0.3
+          },
+          night_cloudy: {
+            hemiIntensity: 0.25,
+            groundR: 0.04, groundG: 0.04, groundB: 0.1,
+            dirIntensity: 0.15,
+            dirX: 0, dirY: -0.8, dirZ: 0,
+            fogR: 0.02, fogG: 0.02, fogB: 0.08,
+            fogDensity: 0.025,
+            ambR: 0.15, ambG: 0.15, ambB: 0.25
+          },
+          night_rain: {
+            hemiIntensity: 0.2,
+            groundR: 0.02, groundG: 0.02, groundB: 0.08,
+            dirIntensity: 0.1,
+            dirX: 0, dirY: -0.7, dirZ: 0,
+            fogR: 0.01, fogG: 0.01, fogB: 0.05,
+            fogDensity: 0.032,
+            ambR: 0.1, ambG: 0.1, ambB: 0.18
+          }
+        };
+
+        return configs[`${this.currentTimeOfDay}_${this.currentWeather}`] || configs.noon_clear;
+      }
+
+      setTimeOfDay(time) {
+        this.currentTimeOfDay = time;
+        this.updateLighting();
+        this.updateSkyboxColor();
+      }
+
+      setWeather(weather) {
+        this.currentWeather = weather;
+        this.updateLighting();
+        this.updateSkyboxColor();
+      }
+    }
 
     // ===== 効果音（WebAudio） =====
     const SFX = (() => {
@@ -1137,6 +1732,14 @@ P : チュートリアル表示<br>
     };
 
     let carColors = { ...DEFAULT_COLORS };
+    function applyCarColorsToScene() {
+      if (typeof scene === "undefined" || !scene || !scene.carMaterials) return;
+      const mats = scene.carMaterials;
+      mats.body.diffuseColor = hexToRGB('#' + carColors.bodyColor.toString(16).padStart(6, '0'));
+      mats.bonnet.diffuseColor = hexToRGB('#' + carColors.bonnetColor.toString(16).padStart(6, '0'));
+      mats.trunk.diffuseColor = hexToRGB('#' + carColors.trunkColor.toString(16).padStart(6, '0'));
+      mats.window.diffuseColor = hexToRGB('#' + carColors.windowColor.toString(16).padStart(6, '0'));
+    }
 
     function loadCarColors() {
       const saved = localStorage.getItem("carColors");
@@ -1163,6 +1766,7 @@ P : チュートリアル表示<br>
       carColors = { ...DEFAULT_COLORS };
       saveCarColors();
       updateCustomizeUI();
+      applyCarColorsToScene();
     }
 
     function updateCustomizeUI() {
@@ -1197,6 +1801,7 @@ P : チュートリアル表示<br>
         const key = colorId;
         carColors[key] = parseInt(hex.replace("#", ""), 16);
         saveCarColors();
+        applyCarColorsToScene();
         SFX.playUISound("select");
       });
     });
@@ -1876,7 +2481,8 @@ return h;
       startArea.position = new BABYLON.Vector3(0, 0.01, -groundSize / 2 + 15);
       startArea.material = startMat;
 
-      const goalArea = BABYLON.MeshBuilder.CreateGround("goalArea", { width: 10, height: 10 }, scene);
+      const goalAreaSize = 10;
+      const goalArea = BABYLON.MeshBuilder.CreateGround("goalArea", { width: goalAreaSize, height: goalAreaSize }, scene);
       goalArea.position = new BABYLON.Vector3(0, 0.01, groundSize / 2 - 15);
       goalArea.material = goalMat;
 
@@ -2023,6 +2629,13 @@ return h;
       rearWindow.parent = carBody;
       rearWindow.position = new BABYLON.Vector3(0, 0.85, -1.65);
       rearWindow.material = windowMat;
+
+      scene.carMaterials = {
+        body: carMat,
+        bonnet: bonnetMat,
+        trunk: trunkMat,
+        window: windowMat
+      };
 
       // ===== タイヤ（前輪ステア用ピボット） =====
       const wheelMat = new BABYLON.StandardMaterial("wheelMat", scene);
@@ -2966,6 +3579,11 @@ return h;
 
         const dt = engine.getDeltaTime() / 1000;
 
+        // スカイボックスをカメラ位置に追従させる
+        if (scene.weatherSystem && scene.weatherSystem.skybox) {
+          scene.weatherSystem.skybox.position.copyFrom(camera.position);
+        }
+
         {
           const pre = sampleSurfaceAt(carBody.position.x, carBody.position.z);
           if (pre) surfaceNormal.copyFrom(pre.n);
@@ -3173,7 +3791,15 @@ return h;
           }
         }
 
-        if (!isGoalReached && isTiming && carBody.intersectsMesh(goalArea, true)) {
+        const goalHalf = goalAreaSize * 0.5;
+        const carPos = carBody.position;
+        const goalPos = goalArea.position;
+        const isWithinGoal =
+          Math.abs(carPos.x - goalPos.x) <= goalHalf &&
+          Math.abs(carPos.z - goalPos.z) <= goalHalf &&
+          Math.abs(carPos.y - goalPos.y) <= 2.0;
+
+        if (!isGoalReached && isTiming && (carBody.intersectsMesh(goalArea, true) || isWithinGoal)) {
           isGoalReached = true;
           controlsEnabled = false;
 
@@ -3234,6 +3860,10 @@ return h;
       scene.startPos = startArea.position;
       scene.goalPos = goalArea.position;
       scene.groundSize = groundSize;
+
+      // ===== 天候・時間帯システムの初期化 =====
+      const weatherSystem = new WeatherSystem(scene);
+      scene.weatherSystem = weatherSystem;
 
       return scene;
     };
@@ -3352,7 +3982,8 @@ return h;
       }
     }
 
-    const scene = createScene();
+    let scene = createScene();
+    window.scene = scene;  // グローバルに割り当て
     
     // ミニマップの初期設定
     updateMinimapBounds(scene.course || {});
@@ -3369,6 +4000,291 @@ return h;
         );
       }
     });
+
+    // ===== 天候・時間帯システムのイベントリスナー =====
+    // 時間帯の変更イベント
+    Object.keys(weatherElements.timeOfDay).forEach((timeKey) => {
+      weatherElements.timeOfDay[timeKey].addEventListener("change", (e) => {
+        if (e.target.checked) {
+          currentTimeOfDay = timeKey;
+          if (scene && scene.weatherSystem) {
+            scene.weatherSystem.setTimeOfDay(timeKey);
+          }
+          updateWeatherDisplay();
+          updateEnvironmentButtons();
+          updateEnvironmentStats();
+        }
+      });
+    });
+
+    // 天候の変更イベント
+    Object.keys(weatherElements.weather).forEach((weatherKey) => {
+      weatherElements.weather[weatherKey].addEventListener("change", (e) => {
+        if (e.target.checked) {
+          currentWeather = weatherKey;
+          if (scene && scene.weatherSystem) {
+            scene.weatherSystem.setWeather(weatherKey);
+          }
+          updateWeatherDisplay();
+          updateEnvironmentButtons();
+          updateEnvironmentStats();
+        }
+      });
+    });
+
+    // 天候表示の更新関数
+    function updateWeatherDisplay() {
+      const key = `${currentTimeOfDay}_${currentWeather}`;
+      envLabel.textContent = weatherDescriptions[key] || "晴れ・昼";
+
+      // ライティング設定の説明
+      const lightingDesc = {
+        dawn: "明け方",
+        noon: "昼間",
+        evening: "夕焼け",
+        night: "夜間"
+      };
+      lightingLabel.textContent = lightingDesc[currentTimeOfDay] || "標準";
+
+      // LocalStorageに保存
+      localStorage.setItem("weatherSettings", JSON.stringify({
+        timeOfDay: currentTimeOfDay,
+        weather: currentWeather
+      }));
+    }
+
+    // ゲーム開始時に保存済み設定を読み込む
+    const savedWeatherSettings = localStorage.getItem("weatherSettings");
+    if (savedWeatherSettings) {
+      try {
+        const settings = JSON.parse(savedWeatherSettings);
+        if (settings.timeOfDay && weatherElements.timeOfDay[settings.timeOfDay]) {
+          weatherElements.timeOfDay[settings.timeOfDay].checked = true;
+          currentTimeOfDay = settings.timeOfDay;
+        }
+        if (settings.weather && weatherElements.weather[settings.weather]) {
+          weatherElements.weather[settings.weather].checked = true;
+          currentWeather = settings.weather;
+        }
+        if (scene.weatherSystem) {
+          scene.weatherSystem.setTimeOfDay(currentTimeOfDay);
+          scene.weatherSystem.setWeather(currentWeather);
+        }
+      } catch (e) {
+        console.error("天候設定の復元に失敗:", e);
+      }
+    }
+
+    // 初期表示を更新
+    updateWeatherDisplay();
+
+    // ===== 環境設定モーダルのイベントリスナー =====
+    const environmentBtn = document.getElementById("environmentBtn");
+    const environmentOverlay = document.getElementById("environmentOverlay");
+    const closeEnvironmentBtn = document.getElementById("closeEnvironmentBtn");
+    const envStatsCurrent = document.getElementById("envStatsCurrent");
+    const envStatsLighting = document.getElementById("envStatsLighting");
+    const envStatsFog = document.getElementById("envStatsFog");
+
+    const setEnvironmentModalOpen = (isOpen) => {
+      environmentOverlay.classList.toggle("active", isOpen);
+      document.body.classList.toggle("modal-open", isOpen);
+    };
+
+    // 環境設定ボタンをクリックでモーダルを開く
+    environmentBtn.addEventListener("click", () => {
+      setEnvironmentModalOpen(true);
+      updateEnvironmentButtons();
+      SFX.playUISound("select");
+    });
+
+    // 完了ボタンをクリックでモーダルを閉じる
+    closeEnvironmentBtn.addEventListener("click", () => {
+      setEnvironmentModalOpen(false);
+      SFX.playUISound("select");
+    });
+
+    // オーバーレイをクリックで閉じる（パネル外をクリック）
+    environmentOverlay.addEventListener("click", (e) => {
+      if (e.target === environmentOverlay) {
+        setEnvironmentModalOpen(false);
+      }
+    });
+
+    // 時間帯ボタンのイベント - イベント委譲で実装
+    const environmentPanel = document.getElementById("environmentPanel");
+    
+    // ===== グローバル環境設定変更関数 =====
+    window.changeTimeOfDay = function(time) {
+      try {
+        currentTimeOfDay = time;
+        // ラジオボタンも更新
+        if (weatherElements && weatherElements.timeOfDay && weatherElements.timeOfDay[time]) {
+          weatherElements.timeOfDay[time].checked = true;
+        }
+        // ライティング更新
+        if (scene && scene.weatherSystem) {
+          scene.weatherSystem.setTimeOfDay(time);
+        }
+        // UI更新
+        if (typeof updateWeatherDisplay === 'function') updateWeatherDisplay();
+        if (typeof updateEnvironmentButtons === 'function') updateEnvironmentButtons();
+        if (typeof updateEnvironmentStats === 'function') updateEnvironmentStats();
+        // 音声
+        if (typeof SFX !== 'undefined' && SFX && typeof SFX.playUISound === 'function') {
+          SFX.playUISound("select");
+        }
+        console.log("時間帯変更:", time);
+      } catch(e) {
+        console.error("時間帯変更エラー:", e);
+      }
+    };
+
+    window.changeWeather = function(weather) {
+      try {
+        currentWeather = weather;
+        // ラジオボタンも更新
+        if (weatherElements && weatherElements.weather && weatherElements.weather[weather]) {
+          weatherElements.weather[weather].checked = true;
+        }
+        // ライティング更新
+        if (scene && scene.weatherSystem) {
+          scene.weatherSystem.setWeather(weather);
+        }
+        // UI更新
+        if (typeof updateWeatherDisplay === 'function') updateWeatherDisplay();
+        if (typeof updateEnvironmentButtons === 'function') updateEnvironmentButtons();
+        if (typeof updateEnvironmentStats === 'function') updateEnvironmentStats();
+        // 音声
+        if (typeof SFX !== 'undefined' && SFX && typeof SFX.playUISound === 'function') {
+          SFX.playUISound("select");
+        }
+        console.log("天候変更:", weather);
+      } catch(e) {
+        console.error("天候変更エラー:", e);
+      }
+    };
+
+    // ボタンクリックのダイレクトハンドラー
+    function setupEnvironmentButtons() {
+      // 環境パネル全体にイベントリスナーを設定（イベント委譲）
+      const envPanel = document.getElementById("environmentPanel");
+      if (!envPanel) return;
+
+      envPanel.addEventListener("click", (e) => {
+        // 時間帯ボタン
+        const timeBtn = e.target.closest('[data-time]');
+        if (timeBtn) {
+          const time = timeBtn.getAttribute("data-time");
+          currentTimeOfDay = time;
+          // ラジオボタンも更新
+          if (weatherElements.timeOfDay[time]) {
+            weatherElements.timeOfDay[time].checked = true;
+          }
+          if (scene && scene.weatherSystem) {
+            scene.weatherSystem.setTimeOfDay(time);
+          }
+          updateWeatherDisplay();
+          updateEnvironmentButtons();
+          updateEnvironmentStats();
+          if (SFX) SFX.playUISound("select");
+          return;
+        }
+
+        // 天候ボタン
+        const weatherBtn = e.target.closest('[data-weather]');
+        if (weatherBtn) {
+          const weather = weatherBtn.getAttribute("data-weather");
+          currentWeather = weather;
+          // ラジオボタンも更新
+          if (weatherElements.weather[weather]) {
+            weatherElements.weather[weather].checked = true;
+          }
+          if (scene && scene.weatherSystem) {
+            scene.weatherSystem.setWeather(weather);
+          }
+          updateWeatherDisplay();
+          updateEnvironmentButtons();
+          updateEnvironmentStats();
+          if (SFX) SFX.playUISound("select");
+        }
+      });
+    }
+
+    // 初期設定後にボタンのイベントリスナーを設定
+    setupEnvironmentButtons();
+
+    // ボタンのアクティブ状態を更新
+    function updateEnvironmentButtons() {
+      document.querySelectorAll('[data-time]').forEach((btn) => {
+        const time = btn.getAttribute("data-time");
+        if (time === currentTimeOfDay) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+
+      document.querySelectorAll('[data-weather]').forEach((btn) => {
+        const weather = btn.getAttribute("data-weather");
+        if (weather === currentWeather) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+    }
+
+    // モーダル内の統計情報を更新
+    function updateEnvironmentStats() {
+      const key = `${currentTimeOfDay}_${currentWeather}`;
+      const description = weatherDescriptions[key] || "晴れ・昼";
+      envStatsCurrent.textContent = description;
+
+      // ライティング説明
+      const lightingDesc = {
+        dawn: "明け方（オレンジ色）",
+        noon: "昼間（青空）",
+        evening: "夕焼け（温かい）",
+        night: "夜間（暗い）"
+      };
+      envStatsLighting.textContent = lightingDesc[currentTimeOfDay] || "標準";
+
+      // フォグ密度説明
+      const fogDesc = {
+        clear: "低（視認性が高い）",
+        cloudy: "中（やや視認性が低い）",
+        rain: "高（視認性が低い）"
+      };
+      envStatsFog.textContent = fogDesc[currentWeather] || "低";
+    }
+
+    // 初期状態を設定
+    updateEnvironmentButtons();
+    updateEnvironmentStats();
+
+    // キーボードショートカット: Eキーで環境設定モーダルを開く
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "E" || e.key === "e") {
+        if (!environmentOverlay.classList.contains("active")) {
+          setEnvironmentModalOpen(true);
+          updateEnvironmentButtons();
+          updateEnvironmentStats();
+          if (SFX) SFX.playUISound("select");
+        }
+      }
+      // Escapeキーでモーダルを閉じる
+      if (e.key === "Escape") {
+        if (environmentOverlay.classList.contains("active")) {
+          setEnvironmentModalOpen(false);
+          if (SFX) SFX.playUISound("select");
+        }
+      }
+    });
+
+    // 環境設定ボタンのイベントリスナー設定を再度実行（確実に動作させるため）
+    setupEnvironmentButtons();
+
     window.addEventListener("resize", () => engine.resize());
   </script>
 </body>
