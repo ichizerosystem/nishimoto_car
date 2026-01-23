@@ -7,14 +7,39 @@
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
   <script src="https://cdn.babylonjs.com/cannon.js"></script>
   <style>
-    html, body { width:100%; height:100%; margin:0; padding:0; overflow:hidden; background:#000; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap');
+
+    :root {
+      --ui-bg: rgba(10, 12, 16, 0.72);
+      --ui-bg-strong: rgba(10, 12, 16, 0.86);
+      --ui-border: rgba(255, 255, 255, 0.14);
+      --ui-accent: #ffb300;
+      --ui-accent-soft: rgba(255, 179, 0, 0.28);
+      --ui-cool: #6bd6ff;
+      --ui-text: #f3f4f6;
+      --ui-muted: rgba(243, 244, 246, 0.7);
+      --ui-shadow: 0 10px 30px rgba(0, 0, 0, 0.38);
+      --ui-radius: 12px;
+    }
+
+    html, body { width:100%; height:100%; margin:0; padding:0; overflow:hidden; background: radial-gradient(circle at 18% 18%, #1a2734, #05070b 65%); font-family: "Noto Sans JP", "Helvetica Neue", Arial, sans-serif; color: var(--ui-text); }
     #renderCanvas { width:100%; height:100%; touch-action:none; display:block; }
     body.modal-open #renderCanvas { pointer-events: none; }
 
+    .ui-panel {
+      background: var(--ui-bg);
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius);
+      box-shadow: var(--ui-shadow);
+      backdrop-filter: blur(6px);
+    }
+    .ui-panel--wide { padding: 12px 14px; }
+    .ui-panel--tight { padding: 8px 12px; }
+
     #hud {
-      position:fixed; top:10px; left:10px; color:#fff; background:rgba(0,0,0,0.65);
-      padding:12px 14px; border-radius:8px; font-size:14px; z-index:20; pointer-events:none;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+      position:fixed; top:10px; left:10px;
+      font-size:14px; z-index:20; pointer-events:none;
+      width: 220px;
     }
     
     /* スピードメーター */
@@ -28,40 +53,41 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
       margin-bottom: 4px;
+      color: var(--ui-muted);
     }
     .speedometer-gauge {
       position: relative;
       width: 100%;
       height: 32px;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.35);
       border-radius: 16px;
-      border: 1px solid rgba(255, 193, 7, 0.3);
+      border: 1px solid rgba(255, 179, 0, 0.35);
       overflow: hidden;
       margin-bottom: 4px;
     }
     .speedometer-bar {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, #00ff00 0%, #ffff00 50%, #ff6600 75%, #ff0000 100%);
+      background: linear-gradient(90deg, #18d46b 0%, #ffd83b 50%, #ff8a3d 75%, #ff4444 100%);
       border-radius: 16px;
       transition: width 0.1s ease-out;
-      box-shadow: 0 0 8px rgba(255, 193, 7, 0.4) inset;
+      box-shadow: 0 0 8px rgba(255, 179, 0, 0.4) inset;
     }
     #speedDigital {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-family: 'Courier New', monospace;
-      background: rgba(0, 0, 0, 0.3);
+      font-family: "Rajdhani", "Noto Sans JP", sans-serif;
+      background: rgba(0, 0, 0, 0.28);
       padding: 6px 8px;
       border-radius: 6px;
-      border: 1px solid rgba(255, 193, 7, 0.2);
+      border: 1px solid rgba(255, 179, 0, 0.2);
     }
     #speedNumber {
       font-size: 18px;
       font-weight: 900;
-      color: #ffff00;
-      text-shadow: 0 0 6px rgba(255, 255, 0, 0.6);
+      color: #ffd83b;
+      text-shadow: 0 0 6px rgba(255, 216, 59, 0.5);
       min-width: 45px;
     }
     #speedUnit {
@@ -71,32 +97,32 @@
     }
     #speedStatus {
       font-size: 11px;
-      color: rgba(255, 193, 7, 0.9);
+      color: rgba(255, 179, 0, 0.9);
       margin-left: auto;
     }
     
     #hudStats {
       line-height: 1.55;
       font-size: 13px;
+      color: var(--ui-muted);
     }
     #hudStats div {
       margin: 3px 0;
     }
     #help {
-      position:fixed; left:10px; bottom:62px; color:#fff; background:rgba(0,0,0,0.65);
-      padding:8px 12px; border-radius:8px; font-size:13px; z-index:20; text-align:left; white-space:pre-line;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+      position:fixed; left:10px; bottom:62px;
+      font-size:12px; z-index:20; text-align:left; white-space:pre-line;
+      color: var(--ui-muted);
     }
     #courseSelector {
       position:fixed; top:10px; left:50%; transform:translateX(-50%);
-      background:rgba(0,0,0,0.7); padding:8px 12px; border-radius:10px; color:#fff; font-size:13px;
+      font-size:13px;
       z-index:25; display:flex; align-items:center; gap:8px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
     }
-    #courseSelector span { opacity:.85; }
-    .course-button { border:1px solid rgba(255,255,255,0.5); background:transparent; color:#fff; border-radius:6px; padding:5px 10px; font-size:13px; cursor:pointer; }
-    .course-button:hover { background:rgba(255,255,255,0.15); }
-    .course-button.active { background:#ffc107; color:#000; border-color:#ffc107; }
+    #courseSelector span { opacity:.85; color: var(--ui-muted); }
+    .course-button { border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.06); color:#fff; border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer; font-weight: 700; transition: all 0.2s ease; }
+    .course-button:hover { background:rgba(255,255,255,0.16); }
+    .course-button.active { background: var(--ui-accent); color:#1b1400; border-color: var(--ui-accent); box-shadow: 0 0 10px rgba(255,179,0,0.45); }
 
     /* ビットマップコース（PNG/BMP等）読み込みUI */
     .bitmapUpload{
@@ -121,13 +147,8 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 25;
-      color:#fff;
-      background: rgba(0,0,0,0.55);
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 6px 10px;
-      border-radius: 10px;
+      color: var(--ui-muted);
       font-size: 12px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
       white-space: nowrap;
       pointer-events: none;
     }
@@ -202,24 +223,26 @@
       left: 10px;
       z-index: 20;
       display: flex;
-      align-items: center;
-      gap: 10px;
+      align-items: stretch;
+      gap: 12px;
+      flex-wrap: wrap;
       pointer-events: auto;
       user-select: none;
     }
     
     #resetButton {
-      padding: 9px 14px;
+      padding: 9px 16px;
       font-size: 14px;
       border-radius: 8px;
-      border: none;
-      background: rgba(0, 0, 0, 0.7);
-      color: #fff;
+      border: 1px solid var(--ui-border);
+      background: var(--ui-bg-strong);
+      color: var(--ui-text);
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      box-shadow: var(--ui-shadow);
+      font-weight: 800;
       transition: all 0.2s ease;
     }
-    #resetButton:hover { background: rgba(255, 255, 255, 0.15); }
+    #resetButton:hover { background: rgba(255, 255, 255, 0.14); border-color: rgba(255,255,255,0.35); }
 
     /* ランキングパネル */
     #rankingPanel{
@@ -227,14 +250,9 @@
       right: 10px;
       bottom: 10px;
       z-index: 20;
-      color: #fff;
-      background: rgba(0,0,0,0.65);
-      padding: 8px 12px;
-      border-radius: 10px;
       font-size: 13px;
       line-height: 1.55;
       width: 280px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
       pointer-events: auto;
       user-select: none;
     }
@@ -268,6 +286,7 @@
       line-height: 1;
       flex: 1;
       text-align:center;
+      transition: all 0.2s ease;
     }
     .smallBtn:hover{ background: rgba(255,255,255,0.15); }
 
@@ -413,19 +432,17 @@
       z-index: 19;
       width: 180px;
       height: 180px;
-      background: rgba(0, 0, 0, 0.65);
-      border: 2px solid rgba(255, 193, 7, 0.4);
-      border-radius: 10px;
+      border: 1px solid rgba(255, 179, 0, 0.45);
+      border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-      padding: 8px;
+      padding: 10px;
     }
     #minimapLabel {
       position: absolute;
-      top: 6px;
-      left: 10px;
+      top: 8px;
+      left: 12px;
       font-size: 11px;
-      color: rgba(255, 255, 255, 0.7);
+      color: var(--ui-muted);
       font-weight: 700;
       z-index: 2;
       text-transform: uppercase;
@@ -443,13 +460,7 @@
       top: 200px;
       right: 10px;
       z-index: 19;
-      color: #fff;
-      background: rgba(0, 0, 0, 0.65);
-      border: 1px solid rgba(255, 193, 7, 0.4);
-      border-radius: 8px;
-      padding: 8px 12px;
       font-size: 12px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
       display: none;
       pointer-events: none;
     }
@@ -465,20 +476,15 @@
     
     /* サウンド制御UI */
     #soundControl {
-      color: #fff;
-      background: rgba(0, 0, 0, 0.65);
-      padding: 10px 12px;
-      border-radius: 8px;
       font-size: 12px;
       display: flex;
       align-items: center;
       gap: 10px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
     }
     #soundToggleBtn {
-      background: rgba(255, 193, 7, 0.15);
-      border: 1px solid rgba(255, 193, 7, 0.4);
-      color: #ffc107;
+      background: rgba(255, 179, 0, 0.18);
+      border: 1px solid rgba(255, 179, 0, 0.4);
+      color: #ffd83b;
       border-radius: 6px;
       padding: 6px 10px;
       cursor: pointer;
@@ -489,8 +495,8 @@
       transition: all 0.2s ease;
     }
     #soundToggleBtn:hover {
-      background: rgba(255, 193, 7, 0.25);
-      border-color: rgba(255, 193, 7, 0.6);
+      background: rgba(255, 179, 0, 0.3);
+      border-color: rgba(255, 179, 0, 0.6);
     }
     #volumeContainer {
       display: flex;
@@ -512,7 +518,7 @@
       appearance: none;
       width: 12px;
       height: 12px;
-      background: #ffc107;
+      background: #ffb300;
       border-radius: 50%;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -524,7 +530,7 @@
     #volumeSlider::-moz-range-thumb {
       width: 12px;
       height: 12px;
-      background: #ffc107;
+      background: #ffb300;
       border-radius: 50%;
       border: none;
       cursor: pointer;
@@ -536,7 +542,7 @@
     }
     #volumeLabel {
       font-size: 11px;
-      color: rgba(255, 255, 255, 0.7);
+      color: var(--ui-muted);
       min-width: 30px;
       text-align: right;
     }
@@ -671,13 +677,7 @@
       left: 10px;
       bottom: 80px;
       z-index: 20;
-      background: rgba(0, 0, 0, 0.7);
-      border: 1px solid rgba(255, 193, 7, 0.4);
-      border-radius: 10px;
-      padding: 12px;
-      color: #fff;
       font-size: 12px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
       width: 200px;
       display: none;
     }
@@ -686,7 +686,7 @@
       font-weight: 700;
       font-size: 13px;
       margin-bottom: 8px;
-      color: #ffc107;
+      color: var(--ui-accent);
       display: flex;
       align-items: center;
       gap: 6px;
@@ -710,7 +710,7 @@
 
     .weather-option input[type="radio"] {
       cursor: pointer;
-      accent-color: #ffc107;
+      accent-color: #ffb300;
     }
 
     .time-option {
@@ -731,13 +731,13 @@
 
     .time-option input[type="radio"] {
       cursor: pointer;
-      accent-color: #ffc107;
+      accent-color: #ffb300;
     }
 
     #weatherStats {
       margin-top: 8px;
       padding-top: 8px;
-      border-top: 1px solid rgba(255, 193, 7, 0.2);
+      border-top: 1px solid rgba(255, 179, 0, 0.2);
       font-size: 11px;
       opacity: 0.85;
       line-height: 1.4;
@@ -895,12 +895,20 @@
       color: rgba(255, 255, 255, 0.9);
       margin-left: 6px;
     }
+
+    @media (max-width: 720px) {
+      #hud { width: 200px; }
+      #courseSelector { flex-wrap: wrap; gap: 6px; max-width: calc(100% - 20px); }
+      #minimapContainer { width: 140px; height: 140px; }
+      #rankingPanel { width: 240px; }
+      #controlsPanel { left: 8px; bottom: 8px; }
+    }
   </style>
 </head>
 <body>
   <canvas id="renderCanvas"></canvas>
 
-  <div id="hud">
+  <div id="hud" class="ui-panel ui-panel--wide">
     <div id="speedometerContainer">
       <div id="speedometerLabel">Speed</div>
       <div class="speedometer-gauge">
@@ -921,9 +929,9 @@
       <div>Δ: <span id="deltaValue">--</span></div>
     </div>
   </div>
-  <div id="help">Pキーで各種設定</div>
+  <div id="help" class="ui-panel ui-panel--tight">Pキーで各種設定</div>
 
-  <div id="courseSelector">
+  <div id="courseSelector" class="ui-panel ui-panel--tight">
     <span>コース選択:</span>
     <button class="course-button" data-course="course1">コース1</button>
     <button class="course-button" data-course="bitmap">ビットマップ</button>
@@ -932,11 +940,11 @@
       <input type="file" id="bitmapInput" accept="image/*">
     </label>
   </div>
-  <div class="bitmapLegend">白=道路 / 黒=壁 / 青=スタート / 緑=ゴール / 赤=障害物</div>
+  <div class="bitmapLegend ui-panel ui-panel--tight">白=道路 / 黒=壁 / 青=スタート / 緑=ゴール / 赤=障害物</div>
 
   <div id="controlsPanel">
     <button id="resetButton">リセット</button>
-    <div id="soundControl">
+    <div id="soundControl" class="ui-panel ui-panel--tight">
       <button id="soundToggleBtn">🔊 ON</button>
       <div id="volumeContainer">
         <label for="volumeSlider" style="font-size: 11px; color: rgba(255,255,255,0.7);">Vol:</label>
@@ -947,7 +955,7 @@
   </div>
 
   <!-- 天候・時間帯パネル -->
-  <div id="weatherPanel">
+  <div id="weatherPanel" class="ui-panel ui-panel--wide">
     <div class="panel-title">☀️ 環境設定</div>
 
     <div style="margin-bottom: 10px;">
@@ -1042,12 +1050,12 @@
     </div>
   </div>
 
-  <div id="minimapContainer">
+  <div id="minimapContainer" class="ui-panel ui-panel--tight">
     <div id="minimapLabel">MAP</div>
     <canvas id="minimapCanvas" width="164" height="164"></canvas>
   </div>
 
-  <div id="pauseInfo">
+  <div id="pauseInfo" class="ui-panel ui-panel--tight">
     <div><span class="key">P</span> メニュー</div>
   </div>
 
@@ -1195,7 +1203,7 @@ P : メニューを開いてチュートリアル表示<br>
     </div>
   </div>
 
-  <div id="rankingPanel">
+  <div id="rankingPanel" class="ui-panel ui-panel--wide">
     <div id="rankingTitle">
       <span>Top 5</span>
       <span id="rankingCourse">course1</span>
