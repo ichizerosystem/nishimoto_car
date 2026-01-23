@@ -83,7 +83,7 @@
       margin: 3px 0;
     }
     #help {
-      position:fixed; top:10px; right:10px; color:#fff; background:rgba(0,0,0,0.65);
+      position:fixed; left:10px; bottom:62px; color:#fff; background:rgba(0,0,0,0.65);
       padding:8px 12px; border-radius:8px; font-size:13px; z-index:20; text-align:left; white-space:pre-line;
       box-shadow: 0 6px 18px rgba(0,0,0,0.35);
     }
@@ -155,7 +155,7 @@
       white-space:pre-line;
       text-align:left;
       width: min(420px, 88vw);
-      pointer-events:none;
+      pointer-events:auto;
     }
     #pauseOverlay .title{
       font-size: 22px;
@@ -173,6 +173,27 @@
       min-width: 78px;
       font-weight: 800;
       color: #ffc107;
+    }
+    #pauseOverlay .menu-actions{
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    #pauseOverlay .menu-btn{
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+    #pauseOverlay .menu-btn:hover{
+      background: rgba(255,255,255,0.18);
+      border-color: rgba(255,255,255,0.45);
     }
 
     #controlsPanel {
@@ -521,23 +542,6 @@
     }
 
     /* カスタマイズパネル */
-    #customizeBtn {
-      background: rgba(255, 193, 7, 0.15);
-      border: 1px solid rgba(255, 193, 7, 0.4);
-      color: #ffc107;
-      border-radius: 6px;
-      padding: 6px 10px;
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 11px;
-      text-align: center;
-      transition: all 0.2s ease;
-      min-width: 60px;
-    }
-    #customizeBtn:hover {
-      background: rgba(255, 193, 7, 0.25);
-      border-color: rgba(255, 193, 7, 0.6);
-    }
     #customizeOverlay {
       position: fixed;
       top: 0;
@@ -739,26 +743,6 @@
       line-height: 1.4;
     }
 
-    /* 環境設定ボタン */
-    #environmentBtn {
-      background: rgba(100, 200, 255, 0.2);
-      border: 1px solid rgba(100, 200, 255, 0.5);
-      color: #64c8ff;
-      border-radius: 6px;
-      padding: 6px 10px;
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 11px;
-      text-align: center;
-      transition: all 0.2s ease;
-      min-width: 70px;
-    }
-
-    #environmentBtn:hover {
-      background: rgba(100, 200, 255, 0.3);
-      border-color: rgba(100, 200, 255, 0.8);
-    }
-
     /* 環境設定モーダルオーバーレイ */
     #environmentOverlay {
       position: fixed;
@@ -937,6 +921,7 @@
       <div>Δ: <span id="deltaValue">--</span></div>
     </div>
   </div>
+  <div id="help">Pキーで各種設定</div>
 
   <div id="courseSelector">
     <span>コース選択:</span>
@@ -951,8 +936,6 @@
 
   <div id="controlsPanel">
     <button id="resetButton">リセット</button>
-    <button id="customizeBtn">🎨 カスタマイズ</button>
-    <button type="button" id="environmentBtn">🌍 環境設定</button>
     <div id="soundControl">
       <button id="soundToggleBtn">🔊 ON</button>
       <div id="volumeContainer">
@@ -1065,7 +1048,7 @@
   </div>
 
   <div id="pauseInfo">
-    <div><span class="key">P</span> 再開</div>
+    <div><span class="key">P</span> メニュー</div>
   </div>
 
   <div id="message">GOAL!</div>
@@ -1080,9 +1063,13 @@
 <span class="key">D / →</span> 右旋回
 <span class="key">Space</span> ブレーキ
 <span class="key">G</span> ゴースト ON/OFF
-<span class="key">E</span> 環境設定
-<span class="key">T</span> チュートリアル
 <span class="key">リセット</span> 左下ボタン
+    </div>
+    <div class="menu-actions">
+      <button type="button" class="menu-btn" id="pauseResumeBtn">▶ 再開</button>
+      <button type="button" class="menu-btn" id="pauseEnvironmentBtn">🌍 環境設定</button>
+      <button type="button" class="menu-btn" id="pauseCustomizeBtn">🎨 カスタマイズ</button>
+      <button type="button" class="menu-btn" id="pauseTutorialBtn">📖 チュートリアル</button>
     </div>
   </div>
 
@@ -1130,10 +1117,10 @@ G : ゴースト ON/OFF
       <div class="step">
         <div class="step-title">4️⃣ その他の機能</div>
         <div class="step-content">
-          ゲーム中にP キーを押すことでいつでもこのチュートリアルを表示できます。
+          ゲーム中にP キーでメニューを開き、いつでもこのチュートリアルを表示できます。
         </div>
         <div class="key-info">
-P : チュートリアル表示<br>
+P : メニューを開いてチュートリアル表示<br>
 リセット : ゲームをリセット
         </div>
       </div>
@@ -1268,6 +1255,10 @@ P : チュートリアル表示<br>
 
     // ポーズ情報パネル
     const pauseInfoEl = document.getElementById("pauseInfo");
+    const pauseResumeBtn = document.getElementById("pauseResumeBtn");
+    const pauseEnvironmentBtn = document.getElementById("pauseEnvironmentBtn");
+    const pauseCustomizeBtn = document.getElementById("pauseCustomizeBtn");
+    const pauseTutorialBtn = document.getElementById("pauseTutorialBtn");
 
     // サウンド制御UI
     const soundControl = document.getElementById("soundControl");
@@ -1776,14 +1767,22 @@ P : チュートリアル表示<br>
       document.getElementById("windowColor").value = '#' + carColors.windowColor.toString(16).padStart(6, '0');
     }
 
+    const setCustomizeModalOpen = (isOpen) => {
+      customizeOverlay.classList.toggle("active", isOpen);
+      document.body.classList.toggle("modal-open", isOpen);
+      if (isOpen) updateCustomizeUI();
+      if (!isOpen && isPaused) showPauseOverlay();
+    };
+
     // ===== カスタマイズUI イベントリスナー =====
-    customizeBtn.addEventListener("click", () => {
-      customizeOverlay.classList.add("active");
-      updateCustomizeUI();
-    });
+    if (customizeBtn) {
+      customizeBtn.addEventListener("click", () => {
+        setCustomizeModalOpen(true);
+      });
+    }
 
     closeCustomizeBtn.addEventListener("click", () => {
-      customizeOverlay.classList.remove("active");
+      setCustomizeModalOpen(false);
     });
 
     resetCustomizeBtn.addEventListener("click", () => {
@@ -1820,7 +1819,7 @@ P : チュートリアル表示<br>
     // オーバーレイの背景をクリックして閉じる
     customizeOverlay.addEventListener("click", (e) => {
       if (e.target === customizeOverlay) {
-        customizeOverlay.classList.remove("active");
+        setCustomizeModalOpen(false);
       }
     });
 
@@ -3115,6 +3114,7 @@ return h;
 
       function hideTutorial() {
         tutorialOverlay.classList.remove("active");
+        if (isPaused) showPauseOverlay();
       }
 
       skipTutorialBtn.addEventListener("click", hideTutorial);
@@ -3124,6 +3124,30 @@ return h;
         if (e.target === tutorialOverlay) {
           hideTutorial();
         }
+      });
+
+      pauseResumeBtn.addEventListener("click", () => {
+        resumeGame();
+      });
+
+      pauseEnvironmentBtn.addEventListener("click", () => {
+        hidePauseOverlay();
+        setEnvironmentModalOpen(true);
+        updateEnvironmentButtons();
+        updateEnvironmentStats();
+        SFX.playUISound("select");
+      });
+
+      pauseCustomizeBtn.addEventListener("click", () => {
+        hidePauseOverlay();
+        setCustomizeModalOpen(true);
+        SFX.playUISound("select");
+      });
+
+      pauseTutorialBtn.addEventListener("click", () => {
+        hidePauseOverlay();
+        showTutorial();
+        SFX.playUISound("select");
       });
 
       // ===== Pause =====
@@ -3215,13 +3239,22 @@ return h;
         }
 
         if (key === "p" && !inputMap["p"]) {
-          if (isPaused) resumeGame();
-          else if (isTiming && !isGoalReached) pauseGame(inputMap);
-        }
-
-        // T キーでもチュートリアル表示
-        if ((key === "t" || key === "？") && !inputMap[key]) {
-          showTutorial();
+          if (isPaused) {
+            const hasModalOpen =
+              environmentOverlay.classList.contains("active") ||
+              customizeOverlay.classList.contains("active") ||
+              tutorialOverlay.classList.contains("active");
+            if (hasModalOpen) {
+              setEnvironmentModalOpen(false);
+              setCustomizeModalOpen(false);
+              hideTutorial();
+              showPauseOverlay();
+            } else {
+              resumeGame();
+            }
+          } else if (isTiming && !isGoalReached) {
+            pauseGame(inputMap);
+          }
         }
 
         inputMap[key] = true;
@@ -4089,14 +4122,17 @@ return h;
     const setEnvironmentModalOpen = (isOpen) => {
       environmentOverlay.classList.toggle("active", isOpen);
       document.body.classList.toggle("modal-open", isOpen);
+      if (!isOpen && isPaused) showPauseOverlay();
     };
 
     // 環境設定ボタンをクリックでモーダルを開く
-    environmentBtn.addEventListener("click", () => {
-      setEnvironmentModalOpen(true);
-      updateEnvironmentButtons();
-      SFX.playUISound("select");
-    });
+    if (environmentBtn) {
+      environmentBtn.addEventListener("click", () => {
+        setEnvironmentModalOpen(true);
+        updateEnvironmentButtons();
+        SFX.playUISound("select");
+      });
+    }
 
     // 完了ボタンをクリックでモーダルを閉じる
     closeEnvironmentBtn.addEventListener("click", () => {
@@ -4263,17 +4299,8 @@ return h;
     updateEnvironmentButtons();
     updateEnvironmentStats();
 
-    // キーボードショートカット: Eキーで環境設定モーダルを開く
+    // Escapeキーでモーダルを閉じる
     document.addEventListener("keydown", (e) => {
-      if (e.key === "E" || e.key === "e") {
-        if (!environmentOverlay.classList.contains("active")) {
-          setEnvironmentModalOpen(true);
-          updateEnvironmentButtons();
-          updateEnvironmentStats();
-          if (SFX) SFX.playUISound("select");
-        }
-      }
-      // Escapeキーでモーダルを閉じる
       if (e.key === "Escape") {
         if (environmentOverlay.classList.contains("active")) {
           setEnvironmentModalOpen(false);
