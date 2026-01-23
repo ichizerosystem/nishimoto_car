@@ -2571,6 +2571,63 @@ return h;
       frontBumper.material = bumperMat;
       shadowGenerator.addShadowCaster(frontBumper);
 
+      // ===== ヘッドライト（夜間のみ点灯） =====
+      const headlightMat = new BABYLON.StandardMaterial("headlightMat", scene);
+      headlightMat.emissiveColor = new BABYLON.Color3(0.08, 0.08, 0.08);
+      headlightMat.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+      headlightMat.specularColor = new BABYLON.Color3(0, 0, 0);
+
+      const headlightL = BABYLON.MeshBuilder.CreateCylinder("headlightLensL", {
+        diameter: 0.2,
+        height: 0.08,
+        tessellation: 16
+      }, scene);
+      headlightL.parent = carBody;
+      headlightL.position = new BABYLON.Vector3(-0.6, 0.12, 2.06);
+      headlightL.rotation.x = Math.PI / 2;
+      headlightL.material = headlightMat;
+
+      const headlightR = BABYLON.MeshBuilder.CreateCylinder("headlightLensR", {
+        diameter: 0.2,
+        height: 0.08,
+        tessellation: 16
+      }, scene);
+      headlightR.parent = carBody;
+      headlightR.position = new BABYLON.Vector3(0.6, 0.12, 2.06);
+      headlightR.rotation.x = Math.PI / 2;
+      headlightR.material = headlightMat;
+
+      glow.addIncludedOnlyMesh(headlightL);
+      glow.addIncludedOnlyMesh(headlightR);
+
+      const headlightLightL = new BABYLON.SpotLight(
+        "headlightLightL",
+        new BABYLON.Vector3(-0.6, 0.18, 2.1),
+        new BABYLON.Vector3(0, -0.05, 1),
+        Math.PI / 3.2,
+        2,
+        scene
+      );
+      headlightLightL.parent = carBody;
+      headlightLightL.diffuse = new BABYLON.Color3(1.0, 0.95, 0.85);
+      headlightLightL.specular = new BABYLON.Color3(1.0, 0.95, 0.85);
+      headlightLightL.range = 90;
+      headlightLightL.intensity = 0;
+
+      const headlightLightR = new BABYLON.SpotLight(
+        "headlightLightR",
+        new BABYLON.Vector3(0.6, 0.18, 2.1),
+        new BABYLON.Vector3(0, -0.05, 1),
+        Math.PI / 3.2,
+        2,
+        scene
+      );
+      headlightLightR.parent = carBody;
+      headlightLightR.diffuse = new BABYLON.Color3(1.0, 0.95, 0.85);
+      headlightLightR.specular = new BABYLON.Color3(1.0, 0.95, 0.85);
+      headlightLightR.range = 90;
+      headlightLightR.intensity = 0;
+
       // ===== キャビン（前半・後半で分割） =====
       // 前部キャビン（フロント寄り）
       const cabinFront = BABYLON.MeshBuilder.CreateBox("cabinFront", { width: 1.65, height: 0.75, depth: 1.6 }, scene);
@@ -3888,7 +3945,13 @@ return h;
       });
 
       // ミニマップ用にシーンにデータを保存
-      scene.car = { carBody };
+      scene.car = {
+        carBody,
+        headlights: {
+          lights: [headlightLightL, headlightLightR],
+          lensMaterial: headlightMat
+        }
+      };
       scene.course = { colliders };
       scene.startPos = startArea.position;
       scene.goalPos = goalArea.position;
@@ -4066,6 +4129,21 @@ return h;
     });
 
     // 天候表示の更新関数
+    function updateHeadlightsForTime() {
+      if (!scene || !scene.car || !scene.car.headlights) return;
+      const enabled = currentTimeOfDay === "night";
+      const lights = scene.car.headlights.lights || [];
+      const lensMaterial = scene.car.headlights.lensMaterial;
+      lights.forEach((light) => {
+        light.intensity = enabled ? 15.0 : 0;
+      });
+      if (lensMaterial) {
+        lensMaterial.emissiveColor = enabled
+          ? new BABYLON.Color3(1.4, 1.3, 1.1)
+          : new BABYLON.Color3(0.08, 0.08, 0.08);
+      }
+    }
+
     function updateWeatherDisplay() {
       const key = `${currentTimeOfDay}_${currentWeather}`;
       envLabel.textContent = weatherDescriptions[key] || "晴れ・昼";
@@ -4078,6 +4156,8 @@ return h;
         night: "夜間"
       };
       lightingLabel.textContent = lightingDesc[currentTimeOfDay] || "標準";
+
+      updateHeadlightsForTime();
 
       // LocalStorageに保存
       localStorage.setItem("weatherSettings", JSON.stringify({
