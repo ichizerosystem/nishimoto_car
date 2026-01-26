@@ -1312,6 +1312,23 @@ P : メニューを開いてチュートリアル表示<br>
       night_cloudy: "曇り・夜",
       night_rain: "雨・夜"
     };
+    const lightingDescriptionsShort = {
+      dawn: "明け方",
+      noon: "昼間",
+      evening: "夕焼け",
+      night: "夜間"
+    };
+    const lightingDescriptionsLong = {
+      dawn: "明け方（オレンジ色）",
+      noon: "昼間（青空）",
+      evening: "夕焼け（温かい）",
+      night: "夜間（暗い）"
+    };
+    const fogDescriptions = {
+      clear: "低（視認性が高い）",
+      cloudy: "中（やや視認性が低い）",
+      rain: "高（視認性が低い）"
+    };
 
     // 天候・時間帯システムの状態管理と更新処理
     class WeatherSystem {
@@ -4091,11 +4108,15 @@ return h;
     
     // ミニマップの初期設定
     updateMinimapBounds(scene.course || {});
+    const MINIMAP_INTERVAL_MS = 120;
+    let lastMinimapTs = 0;
     
     engine.runRenderLoop(() => {
       scene.render();
       // ゲームループ内でミニマップを更新
-      if (scene.car && scene.course) {
+      const now = performance.now();
+      if (scene.car && scene.course && (now - lastMinimapTs) >= MINIMAP_INTERVAL_MS) {
+        lastMinimapTs = now;
         drawMinimap(
           scene.car,
           scene.course,
@@ -4106,17 +4127,45 @@ return h;
     });
 
     // ===== 天候・時間帯システムのイベントリスナー =====
+    const timeButtons = Array.from(document.querySelectorAll('[data-time]'));
+    const weatherButtons = Array.from(document.querySelectorAll('[data-weather]'));
+    let environmentStatsReady = false;
+    const applyEnvironment = ({ timeOfDay, weather, playSound = false } = {}) => {
+      if (timeOfDay && weatherElements.timeOfDay[timeOfDay]) {
+        currentTimeOfDay = timeOfDay;
+      }
+      if (weather && weatherElements.weather[weather]) {
+        currentWeather = weather;
+      }
+
+      if (weatherElements.timeOfDay[currentTimeOfDay]) {
+        weatherElements.timeOfDay[currentTimeOfDay].checked = true;
+      }
+      if (weatherElements.weather[currentWeather]) {
+        weatherElements.weather[currentWeather].checked = true;
+      }
+
+      if (scene && scene.weatherSystem) {
+        scene.weatherSystem.setTimeOfDay(currentTimeOfDay);
+        scene.weatherSystem.setWeather(currentWeather);
+      }
+
+      updateWeatherDisplay();
+      updateEnvironmentButtons();
+      if (environmentStatsReady) {
+        updateEnvironmentStats();
+      }
+
+      if (playSound && SFX && typeof SFX.playUISound === "function") {
+        SFX.playUISound("select");
+      }
+    };
+
     // 時間帯の変更イベント
     Object.keys(weatherElements.timeOfDay).forEach((timeKey) => {
       weatherElements.timeOfDay[timeKey].addEventListener("change", (e) => {
         if (e.target.checked) {
-          currentTimeOfDay = timeKey;
-          if (scene && scene.weatherSystem) {
-            scene.weatherSystem.setTimeOfDay(timeKey);
-          }
-          updateWeatherDisplay();
-          updateEnvironmentButtons();
-          updateEnvironmentStats();
+          applyEnvironment({ timeOfDay: timeKey });
         }
       });
     });
@@ -4125,13 +4174,7 @@ return h;
     Object.keys(weatherElements.weather).forEach((weatherKey) => {
       weatherElements.weather[weatherKey].addEventListener("change", (e) => {
         if (e.target.checked) {
-          currentWeather = weatherKey;
-          if (scene && scene.weatherSystem) {
-            scene.weatherSystem.setWeather(weatherKey);
-          }
-          updateWeatherDisplay();
-          updateEnvironmentButtons();
-          updateEnvironmentStats();
+          applyEnvironment({ weather: weatherKey });
         }
       });
     });
@@ -4157,13 +4200,7 @@ return h;
       envLabel.textContent = weatherDescriptions[key] || "晴れ・昼";
 
       // ライティング設定の説明
-      const lightingDesc = {
-        dawn: "明け方",
-        noon: "昼間",
-        evening: "夕焼け",
-        night: "夜間"
-      };
-      lightingLabel.textContent = lightingDesc[currentTimeOfDay] || "標準";
+      lightingLabel.textContent = lightingDescriptionsShort[currentTimeOfDay] || "標準";
 
       updateHeadlightsForTime();
 
@@ -4179,18 +4216,10 @@ return h;
     if (savedWeatherSettings) {
       try {
         const settings = JSON.parse(savedWeatherSettings);
-        if (settings.timeOfDay && weatherElements.timeOfDay[settings.timeOfDay]) {
-          weatherElements.timeOfDay[settings.timeOfDay].checked = true;
-          currentTimeOfDay = settings.timeOfDay;
-        }
-        if (settings.weather && weatherElements.weather[settings.weather]) {
-          weatherElements.weather[settings.weather].checked = true;
-          currentWeather = settings.weather;
-        }
-        if (scene.weatherSystem) {
-          scene.weatherSystem.setTimeOfDay(currentTimeOfDay);
-          scene.weatherSystem.setWeather(currentWeather);
-        }
+        applyEnvironment({
+          timeOfDay: settings.timeOfDay,
+          weather: settings.weather
+        });
       } catch (e) {
         console.error("天候設定の復元に失敗:", e);
       }
@@ -4206,6 +4235,7 @@ return h;
     const envStatsCurrent = document.getElementById("envStatsCurrent");
     const envStatsLighting = document.getElementById("envStatsLighting");
     const envStatsFog = document.getElementById("envStatsFog");
+    environmentStatsReady = true;
 
     const setEnvironmentModalOpen = (isOpen) => {
       environmentOverlay.classList.toggle("active", isOpen);
@@ -4241,23 +4271,7 @@ return h;
     // ===== グローバル環境設定変更関数 =====
     window.changeTimeOfDay = function(time) {
       try {
-        currentTimeOfDay = time;
-        // ラジオボタンも更新
-        if (weatherElements && weatherElements.timeOfDay && weatherElements.timeOfDay[time]) {
-          weatherElements.timeOfDay[time].checked = true;
-        }
-        // ライティング更新
-        if (scene && scene.weatherSystem) {
-          scene.weatherSystem.setTimeOfDay(time);
-        }
-        // UI更新
-        if (typeof updateWeatherDisplay === 'function') updateWeatherDisplay();
-        if (typeof updateEnvironmentButtons === 'function') updateEnvironmentButtons();
-        if (typeof updateEnvironmentStats === 'function') updateEnvironmentStats();
-        // 音声
-        if (typeof SFX !== 'undefined' && SFX && typeof SFX.playUISound === 'function') {
-          SFX.playUISound("select");
-        }
+        applyEnvironment({ timeOfDay: time, playSound: true });
         console.log("時間帯変更:", time);
       } catch(e) {
         console.error("時間帯変更エラー:", e);
@@ -4266,23 +4280,7 @@ return h;
 
     window.changeWeather = function(weather) {
       try {
-        currentWeather = weather;
-        // ラジオボタンも更新
-        if (weatherElements && weatherElements.weather && weatherElements.weather[weather]) {
-          weatherElements.weather[weather].checked = true;
-        }
-        // ライティング更新
-        if (scene && scene.weatherSystem) {
-          scene.weatherSystem.setWeather(weather);
-        }
-        // UI更新
-        if (typeof updateWeatherDisplay === 'function') updateWeatherDisplay();
-        if (typeof updateEnvironmentButtons === 'function') updateEnvironmentButtons();
-        if (typeof updateEnvironmentStats === 'function') updateEnvironmentStats();
-        // 音声
-        if (typeof SFX !== 'undefined' && SFX && typeof SFX.playUISound === 'function') {
-          SFX.playUISound("select");
-        }
+        applyEnvironment({ weather, playSound: true });
         console.log("天候変更:", weather);
       } catch(e) {
         console.error("天候変更エラー:", e);
@@ -4300,18 +4298,7 @@ return h;
         const timeBtn = e.target.closest('[data-time]');
         if (timeBtn) {
           const time = timeBtn.getAttribute("data-time");
-          currentTimeOfDay = time;
-          // ラジオボタンも更新
-          if (weatherElements.timeOfDay[time]) {
-            weatherElements.timeOfDay[time].checked = true;
-          }
-          if (scene && scene.weatherSystem) {
-            scene.weatherSystem.setTimeOfDay(time);
-          }
-          updateWeatherDisplay();
-          updateEnvironmentButtons();
-          updateEnvironmentStats();
-          if (SFX) SFX.playUISound("select");
+          applyEnvironment({ timeOfDay: time, playSound: true });
           return;
         }
 
@@ -4319,18 +4306,7 @@ return h;
         const weatherBtn = e.target.closest('[data-weather]');
         if (weatherBtn) {
           const weather = weatherBtn.getAttribute("data-weather");
-          currentWeather = weather;
-          // ラジオボタンも更新
-          if (weatherElements.weather[weather]) {
-            weatherElements.weather[weather].checked = true;
-          }
-          if (scene && scene.weatherSystem) {
-            scene.weatherSystem.setWeather(weather);
-          }
-          updateWeatherDisplay();
-          updateEnvironmentButtons();
-          updateEnvironmentStats();
-          if (SFX) SFX.playUISound("select");
+          applyEnvironment({ weather, playSound: true });
         }
       });
     }
@@ -4340,7 +4316,7 @@ return h;
 
     // ボタンのアクティブ状態を更新
     function updateEnvironmentButtons() {
-      document.querySelectorAll('[data-time]').forEach((btn) => {
+      timeButtons.forEach((btn) => {
         const time = btn.getAttribute("data-time");
         if (time === currentTimeOfDay) {
           btn.classList.add("active");
@@ -4349,7 +4325,7 @@ return h;
         }
       });
 
-      document.querySelectorAll('[data-weather]').forEach((btn) => {
+      weatherButtons.forEach((btn) => {
         const weather = btn.getAttribute("data-weather");
         if (weather === currentWeather) {
           btn.classList.add("active");
@@ -4366,21 +4342,10 @@ return h;
       envStatsCurrent.textContent = description;
 
       // ライティング説明
-      const lightingDesc = {
-        dawn: "明け方（オレンジ色）",
-        noon: "昼間（青空）",
-        evening: "夕焼け（温かい）",
-        night: "夜間（暗い）"
-      };
-      envStatsLighting.textContent = lightingDesc[currentTimeOfDay] || "標準";
+      envStatsLighting.textContent = lightingDescriptionsLong[currentTimeOfDay] || "標準";
 
       // フォグ密度説明
-      const fogDesc = {
-        clear: "低（視認性が高い）",
-        cloudy: "中（やや視認性が低い）",
-        rain: "高（視認性が低い）"
-      };
-      envStatsFog.textContent = fogDesc[currentWeather] || "低";
+      envStatsFog.textContent = fogDescriptions[currentWeather] || "低";
     }
 
     // 初期状態を設定
